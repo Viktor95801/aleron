@@ -2,3 +2,4 @@ build
 aleron
 *.o
 tmp*
+test_runner

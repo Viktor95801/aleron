@@ -1,6 +1,7 @@
 #include "aleron.h"
 
 #include <ctype.h>
+#include <string.h>
 
 #include "crc.h"
 
@@ -61,8 +62,7 @@ ScanResult next_token(const char *original, char **src)
                         .token = { TK_INVALID },
                         .len = 1,
                         .pos = *src - original,
-                        .error = from_cstr(
-                                format("stray '%c' in source\n", **src))
+                        .error = strdup(format("stray '%c' in source\n", **src))
                 };
                 scanner_next_char(src);
                 return result;

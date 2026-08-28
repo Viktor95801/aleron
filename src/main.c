@@ -1,10 +1,7 @@
 #include <stdio.h>
 
-#define CRC_IMPLEMENTATION
-#define CRC_THREAD_SAFE
-#include "crc.h"
-
 #include "aleron.h"
+#include "crc.h"
 
 int main(int argc, char *argv[])
 {
