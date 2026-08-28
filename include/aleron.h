@@ -20,6 +20,8 @@ typedef enum {
 
         TK_ADD,
         TK_SUB,
+        TK_MUL,
+        TK_DIV,
 } TokenKind;
 
 typedef struct {

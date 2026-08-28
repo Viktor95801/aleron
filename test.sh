@@ -31,6 +31,7 @@ assert 42 42
 assert 21 '5+20-4'
 assert 1 '22-26+5'
 assert 41 '  12 +   34 - 5 '
+assert 3 '2 * 3 / 2'
 
 echo OK
 assert_cleanup

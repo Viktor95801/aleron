@@ -54,9 +54,32 @@ int main(int argc, char *argv[])
                                  "expected int, got '%.*s'\n", scan.len,
                                  original + scan.pos);
                 } break;
-
-                default:
-                        unreachable();
+                case TK_MUL: {
+                        scan = next_token(original, &src);
+                        if (scan.token.kind == TK_INT) {
+                                printf("  %%x%d =w mul %%x%d, %li\n",
+                                       x_index + 1, x_index,
+                                       atol(original + scan.pos));
+                                x_index++;
+                                continue;
+                        }
+                        error_at(original, scan.pos,
+                                 "expected int, got '%.*s'\n", scan.len,
+                                 original + scan.pos);
+                } break;
+                case TK_DIV: {
+                        scan = next_token(original, &src);
+                        if (scan.token.kind == TK_INT) {
+                                printf("  %%x%d =w div %%x%d, %li\n",
+                                       x_index + 1, x_index,
+                                       atol(original + scan.pos));
+                                x_index++;
+                                continue;
+                        }
+                        error_at(original, scan.pos,
+                                 "expected int, got '%.*s'\n", scan.len,
+                                 original + scan.pos);
+                } break;
                 }
         }
         printf("  ret %%x%d\n"

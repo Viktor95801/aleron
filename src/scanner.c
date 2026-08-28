@@ -39,7 +39,18 @@ ScanResult next_token(const char *original, char **src)
                                      .len = 1,
                                      .pos = scanner_next_char(src) - original };
         }
-        // sub here cuz we want it to stay here forever
+        case '*': {
+                return (ScanResult){ .token = { TK_MUL },
+                                     .len = 1,
+                                     .pos = scanner_next_char(src) - original };
+        }
+        case '/': {
+                return (ScanResult){ .token = { TK_DIV },
+                                     .len = 1,
+                                     .pos = scanner_next_char(src) - original };
+        }
+
+        // we want it to stay here forever
         case '\0': {
                 return (ScanResult){ .token = { TK_EOF },
                                      .len = 1,
