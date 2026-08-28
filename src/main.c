@@ -20,9 +20,10 @@ int main(int argc, char *argv[])
 
         for (ScanResult scan = next_token(original, &src);
              scan.token.kind != TK_EOF; scan = next_token(original, &src)) {
+                const Token token = scan.token;
                 switch (scan.token.kind) {
                 case TK_INVALID: {
-                        error_at(original, scan.pos, scan.error);
+                        error_at(original, token.pos, scan.error);
                 }
 
                 case TK_ADD: {
@@ -30,52 +31,52 @@ int main(int argc, char *argv[])
                         if (scan.token.kind == TK_INT) {
                                 printf("  %%x%d =w add %%x%d, %li\n",
                                        x_index + 1, x_index,
-                                       atol(original + scan.pos));
+                                       atol(original + token.pos));
                                 x_index++;
                                 continue;
                         }
-                        error_at(original, scan.pos,
-                                 "expected int, got '%.*s'\n", scan.len,
-                                 original + scan.pos);
+                        error_at(original, token.pos,
+                                 "expected int, got '%.*s'\n", token.len,
+                                 original + token.pos);
                 } break;
                 case TK_SUB: {
                         scan = next_token(original, &src);
                         if (scan.token.kind == TK_INT) {
                                 printf("  %%x%d =w sub %%x%d, %li\n",
                                        x_index + 1, x_index,
-                                       atol(original + scan.pos));
+                                       atol(original + token.pos));
                                 x_index++;
                                 continue;
                         }
-                        error_at(original, scan.pos,
-                                 "expected int, got '%.*s'\n", scan.len,
-                                 original + scan.pos);
+                        error_at(original, token.pos,
+                                 "expected int, got '%.*s'\n", token.len,
+                                 original + token.pos);
                 } break;
                 case TK_MUL: {
                         scan = next_token(original, &src);
                         if (scan.token.kind == TK_INT) {
                                 printf("  %%x%d =w mul %%x%d, %li\n",
                                        x_index + 1, x_index,
-                                       atol(original + scan.pos));
+                                       atol(original + token.pos));
                                 x_index++;
                                 continue;
                         }
-                        error_at(original, scan.pos,
-                                 "expected int, got '%.*s'\n", scan.len,
-                                 original + scan.pos);
+                        error_at(original, token.pos,
+                                 "expected int, got '%.*s'\n", token.len,
+                                 original + token.pos);
                 } break;
                 case TK_DIV: {
                         scan = next_token(original, &src);
                         if (scan.token.kind == TK_INT) {
                                 printf("  %%x%d =w div %%x%d, %li\n",
                                        x_index + 1, x_index,
-                                       atol(original + scan.pos));
+                                       atol(original + token.pos));
                                 x_index++;
                                 continue;
                         }
-                        error_at(original, scan.pos,
-                                 "expected int, got '%.*s'\n", scan.len,
-                                 original + scan.pos);
+                        error_at(original, token.pos,
+                                 "expected int, got '%.*s'\n", token.len,
+                                 original + token.pos);
                 } break;
                 }
         }

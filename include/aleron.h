@@ -29,12 +29,12 @@ typedef enum {
 
 typedef struct {
         TokenKind kind;
+        u16 len;
+        u32 pos;
 } Token;
 
 typedef struct {
         Token token;
-        i16 len;
-        i32 pos;
         char *error;
 } ScanResult;
 

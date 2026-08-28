@@ -5,24 +5,17 @@
 
 struct {
         char *name, *it;
-        Token wants[32];
+        TokenKind wants[32];
 } lexer_test_cases[] = {
-        { "Empty", "", { { TK_EOF } } },
-        { "Invalid", "$", { { TK_INVALID } } },
-        { "Operators",
-          "+ -/*",
-          { { TK_ADD }, { TK_SUB }, { TK_DIV }, { TK_MUL }, { TK_EOF } } },
+        { "Empty", "", { TK_EOF } },
+        { "Invalid", "$", { TK_INVALID } },
+        { "Operators", "+ -/*", { TK_ADD, TK_SUB, TK_DIV, TK_MUL, TK_EOF } },
         { "Integer",
           "  32 - 12 + 4  ",
-          { { TK_INT },
-            { TK_SUB },
-            { TK_INT },
-            { TK_ADD },
-            { TK_INT },
-            { TK_EOF } } },
+          { TK_INT, TK_SUB, TK_INT, TK_ADD, TK_INT, TK_EOF } },
         { "Grouping",
           " (21-2)",
-          { { TK_OPAREN }, { TK_INT }, { TK_SUB }, { TK_INT }, { TK_CPAREN } } },
+          { TK_OPAREN, TK_INT, TK_SUB, TK_INT, TK_CPAREN } },
 };
 const i32 lexer_test_amount =
         sizeof(lexer_test_cases) / sizeof(*lexer_test_cases);
@@ -38,7 +31,7 @@ UTEST(lexer, tests)
                         if (scan.token.kind == TK_INVALID) {
                                 free(scan.error);
                         }
-                        ASSERT_EQ(scan.token.kind, test_case.wants[j].kind);
+                        ASSERT_EQ(scan.token.kind, test_case.wants[j]);
                 }
         }
 }

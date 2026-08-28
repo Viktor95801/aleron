@@ -23,18 +23,23 @@ ScanResult next_token(const char *original, char **src)
                 while (isdigit(**src)) {
                         scanner_next_char(src);
                 }
-                auto result = (ScanResult){ .token = { TK_INT },
-                                            .len = *src - start,
-                                            .pos = start - original };
+                auto result = (ScanResult){ .token = {
+                                                    TK_INT,
+                                                    .len = *src - start,
+                                                    .pos = start - original,
+                                            } };
                 return result;
         }
 
-#define singleCharCase(kind)                             \
-                                                         \
-        return (ScanResult)                              \
-        {                                                \
-                .token = { kind }, .len = 1,             \
-                .pos = scanner_next_char(src) - original \
+#define singleCharCase(kind)                                      \
+                                                                  \
+        return (ScanResult)                                       \
+        {                                                         \
+                .token = {                                        \
+                        kind,                                     \
+                        .len = 1,                                 \
+                        .pos = scanner_next_char(src) - original, \
+                }                                                 \
         }
 
         switch (**src) {
@@ -54,15 +59,16 @@ ScanResult next_token(const char *original, char **src)
 
         // we want it to stay here forever
         case '\0': {
-                return (ScanResult){ .token = { TK_EOF },
-                                     .len = 1,
-                                     .pos = *src - original };
+                return (ScanResult){ .token = {
+                                             TK_EOF,
+                                             .len = 1,
+                                             .pos = *src - original,
+                                     } };
         }
         default: {
                 auto result = (ScanResult){
-                        .token = { TK_INVALID },
-                        .len = 1,
-                        .pos = *src - original,
+                        .token = { TK_INVALID, .len = 1,
+                                   .pos = *src - original, },
                         .error = strdup(format("stray '%c' in source\n", **src))
                 };
                 scanner_next_char(src);
