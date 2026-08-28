@@ -1,5 +1,5 @@
 CC       := clang
-CFLAGS   := -Wall -Wextra -std=c23 -Iinclude -g -fsanitize=address,undefined,leak -O1 -fno-common
+CFLAGS   := -Wall -Wextra -std=c23 -Iinclude -g3 -fsanitize=address,undefined,leak -O1 -fno-common -fshort-enums
 LDFLAGS  :=
 RM       := rm -rf
 

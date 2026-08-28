@@ -6,3 +6,4 @@
 -fsanitize=address,undefined,leak
 -O1
 -fno-common
+-fshort-enums
