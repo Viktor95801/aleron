@@ -22,6 +22,9 @@ typedef enum {
         TK_SUB,
         TK_MUL,
         TK_DIV,
+
+        TK_OPAREN,
+        TK_CPAREN,
 } TokenKind;
 
 typedef struct {
@@ -36,6 +39,60 @@ typedef struct {
 } ScanResult;
 
 ScanResult next_token(const char *original, char **src);
+
+#pragma endregion
+
+#pragma region ast
+
+typedef enum {
+        NK_BAD,
+        NK_LIT,
+
+        NK_BINOP,
+        NK_end
+} NodeKind;
+
+typedef struct Node Node;
+typedef enum {
+        LK_INT,
+} LiteralKind;
+typedef struct NodeLit {
+        LiteralKind kind;
+        union {
+                i32 ival;
+                f32 fval;
+        } as;
+} NodeLit;
+
+typedef enum {
+        BINOP_ADD,
+        BINOP_SUB,
+        BINOP_MUL,
+        BINOP_DIV,
+        BINOP_end,
+} BinopKind;
+typedef struct NodeBinop {
+        BinopKind kind;
+        Node *left, *right;
+} NodeBinop;
+
+struct Node {
+        NodeKind kind;
+        union {
+                NodeLit lit;
+                NodeBinop binop;
+        } as;
+};
+
+typedef Node *Ast;
+
+void destroy_node(void *ptr);
+Node *new_node(NodeKind kind);
+Node *new_ival(i32 ival);
+Node *new_binop(BinopKind kind, Node *left, Node *right);
+
+const char *binopk_to_str(BinopKind kind);
+void ast_dump(Ast ast, FILE *file);
 
 #pragma endregion
 

@@ -29,27 +29,28 @@ ScanResult next_token(const char *original, char **src)
                 return result;
         }
 
+#define singleCharCase(kind)                             \
+                                                         \
+        return (ScanResult)                              \
+        {                                                \
+                .token = { kind }, .len = 1,             \
+                .pos = scanner_next_char(src) - original \
+        }
+
         switch (**src) {
-        case '+': {
-                return (ScanResult){ .token = { TK_ADD },
-                                     .len = 1,
-                                     .pos = scanner_next_char(src) - original };
-        }
-        case '-': {
-                return (ScanResult){ .token = { TK_SUB },
-                                     .len = 1,
-                                     .pos = scanner_next_char(src) - original };
-        }
-        case '*': {
-                return (ScanResult){ .token = { TK_MUL },
-                                     .len = 1,
-                                     .pos = scanner_next_char(src) - original };
-        }
-        case '/': {
-                return (ScanResult){ .token = { TK_DIV },
-                                     .len = 1,
-                                     .pos = scanner_next_char(src) - original };
-        }
+        case '+':
+                singleCharCase(TK_ADD);
+        case '-':
+                singleCharCase(TK_SUB);
+        case '*':
+                singleCharCase(TK_MUL);
+        case '/':
+                singleCharCase(TK_DIV);
+
+        case '(':
+                singleCharCase(TK_OPAREN);
+        case ')':
+                singleCharCase(TK_CPAREN);
 
         // we want it to stay here forever
         case '\0': {
@@ -68,4 +69,5 @@ ScanResult next_token(const char *original, char **src)
                 return result;
         }
         }
+#undef singleCharCase
 }

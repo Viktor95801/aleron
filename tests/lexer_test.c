@@ -20,6 +20,9 @@ struct {
             { TK_ADD },
             { TK_INT },
             { TK_EOF } } },
+        { "Grouping",
+          " (21-2)",
+          { { TK_OPAREN }, { TK_INT }, { TK_SUB }, { TK_INT }, { TK_CPAREN } } },
 };
 const i32 lexer_test_amount =
         sizeof(lexer_test_cases) / sizeof(*lexer_test_cases);
