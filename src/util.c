@@ -1,5 +1,8 @@
 #include "util.h"
 
+#include <stdio.h>
+#include <string.h>
+
 // from raylib
 const char *format(const char *text, ...)
 {

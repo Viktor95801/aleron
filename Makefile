@@ -1,37 +1,33 @@
-CC       := clang
-CFLAGS   := -Wall -Wextra -std=c23 -Iinclude -g3 -fsanitize=address,undefined,leak -O1 -fno-common -fshort-enums
-LDFLAGS  :=
-RM       := rm -rf
+CC        := clang
+CFLAGS    := -Wall -Wextra -std=c23 -Iinclude -g3 -fsanitize=address,undefined -O1 -fno-common -fshort-enums
+LDFLAGS   :=
+RM        := rm -rf
 
-TARGET   := aleron
+TARGET    := aleron
 BUILD_DIR := build
-SRC_DIR  := src
+SRC_DIR   := src
 
-# Automatically find all .c files in src/
-SRCS     := $(wildcard $(SRC_DIR)/*.c)
+SRCS      := $(wildcard $(SRC_DIR)/*.c)
+OBJS      := $(patsubst $(SRC_DIR)/%.c, $(BUILD_DIR)/%.o, $(SRCS))
 
-# Map src/foo.c -> build/foo.o
-OBJS     := $(patsubst $(SRC_DIR)/%.c, $(BUILD_DIR)/%.o, $(SRCS))
-
-.PHONY: all test clean
+.PHONY: all test run clean
 
 all: $(TARGET)
 
-# Link the executable from object files in build/
 $(TARGET): $(OBJS)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
-# Rule to compile each .c file into build/%.o
-# The $(BUILD_DIR) prerequisite creates the directory automatically if it doesn't exist
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.c | $(BUILD_DIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-# Order-only prerequisite to ensure the build directory exists
 $(BUILD_DIR):
 	mkdir -p $(BUILD_DIR)
 
 test: $(TARGET)
-	@./test.sh
+	@LSAN_OPTIONS=suppressions=suppressions.txt ./test.sh
+
+run: $(TARGET)
+	@./run.sh $(ARGS)
 
 clean:
 	$(RM) $(TARGET) $(BUILD_DIR) *~ tmp*
