@@ -2,11 +2,14 @@
 #define ALERON_H
 
 #include "util.h"
+#include "vendor/sv.h"
 
 #pragma region error
 
-void verror_at(const char *source, i32 loc, char *fmt, va_list ap);
-void error_at(const char *source, i32 loc, char *fmt, ...);
+__attribute__((noreturn)) void verror_at(const char *source, const char *loc,
+                                         char *fmt, va_list ap);
+__attribute__((noreturn)) void error_at(const char *source, const char *loc,
+                                        char *fmt, ...);
 
 #pragma endregion
 
@@ -29,8 +32,7 @@ typedef enum {
 
 typedef struct {
         TokenKind kind;
-        u16 len;
-        u32 pos;
+        String_View str;
 } Token;
 
 typedef struct {
@@ -38,7 +40,7 @@ typedef struct {
         char *error;
 } ScanResult;
 
-ScanResult next_token(const char *original, char **src);
+ScanResult next_token(char **src);
 
 #pragma endregion
 
@@ -58,10 +60,7 @@ typedef enum {
 } LiteralKind;
 typedef struct NodeLit {
         LiteralKind kind;
-        union {
-                i32 ival;
-                f32 fval;
-        } as;
+        String_View str;
 } NodeLit;
 
 typedef enum {
@@ -88,7 +87,7 @@ typedef Node *Ast;
 
 void destroy_node(void *ptr);
 Node *new_node(NodeKind kind);
-Node *new_ival(i32 ival);
+Node *new_lit(LiteralKind kind, String_View str);
 Node *new_binop(BinopKind kind, Node *left, Node *right);
 
 const char *binopk_to_str(BinopKind kind);

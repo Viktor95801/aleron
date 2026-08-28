@@ -25,9 +25,9 @@ UTEST(lexer, tests)
         for (i32 i = 0; i < lexer_test_amount; ++i) {
                 auto test_case = lexer_test_cases[i];
                 char *src = test_case.it;
-                ScanResult scan = next_token(test_case.it, &src);
+                ScanResult scan = next_token(&src);
                 for (i32 j = 0; scan.token.kind != TK_EOF;
-                     scan = next_token(test_case.it, &src), ++j) {
+                     scan = next_token(&src), ++j) {
                         if (scan.token.kind == TK_INVALID) {
                                 free(scan.error);
                         }

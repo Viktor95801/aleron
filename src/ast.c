@@ -5,6 +5,7 @@
 
 #include "crc.h"
 #include "util.h"
+#include "vendor/sv.h"
 
 void destroy_node(void *ptr)
 {
@@ -36,12 +37,12 @@ Node *new_node(NodeKind kind)
         return result;
 }
 
-Node *new_ival(i32 ival)
+Node *new_lit(LiteralKind kind, String_View str)
 {
         Node *result = new_node(NK_LIT);
         NodeLit *lit = &result->as.lit;
-        lit->kind = LK_INT;
-        lit->as.ival = ival;
+        lit->kind = kind;
+        lit->str = str;
 
         return result;
 }
@@ -92,7 +93,7 @@ static void dump_literal(NodeLit *node, FILE *file)
         assert(node);
         assert(file);
 
-        fprintf(file, "i_%d", node->as.ival);
+        fprintf(file, "i" SV_Fmt, (int)node->str.count, node->str.data);
         switch (node->kind) {
         case LK_INT: {
         } break;
