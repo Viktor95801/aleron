@@ -17,19 +17,20 @@ void destroy_node(void *ptr)
                 del(binop.left);
                 del(binop.right);
         } break;
+        case NK_UNAOP: {
+                NodeUnaop unaop = node->as.unaop;
+                del(unaop.expr);
+        } break;
         case NK_LIT: {
         } break;
 
         case NK_BAD:
-        case NK_end:
                 break;
         }
 }
 
 Node *new_node(NodeKind kind)
 {
-        assert(kind >= NK_BAD && kind < NK_end);
-
         Node *result = with_deleter(sizeof(Node), destroy_node);
         memset(result, 0, sizeof(Node));
         result->kind = kind;
@@ -49,7 +50,6 @@ Node *new_lit(LiteralKind kind, String_View str)
 
 Node *new_binop(BinopKind kind, Node *left, Node *right)
 {
-        assert(kind >= 0 && kind <= BINOP_end);
         assert(left);
         assert(right);
 
@@ -58,6 +58,18 @@ Node *new_binop(BinopKind kind, Node *left, Node *right)
         binop->kind = kind;
         binop->left = left;
         binop->right = right;
+
+        return result;
+}
+
+Node *new_unary(UnaopKind kind, Node *inside)
+{
+        assert(inside);
+
+        Node *result = new_node(NK_UNAOP);
+        NodeUnaop *unaop = &result->as.unaop;
+        unaop->kind = kind;
+        unaop->expr = inside;
 
         return result;
 }
@@ -80,12 +92,19 @@ const char *binopk_to_str(BinopKind kind)
                 return "mul";
         case BINOP_DIV:
                 return "div";
-
-        case BINOP_end:
         }
 
-        assert(0 && format("%s:%d %s unrecognized %d", __FILE__, __LINE__,
-                           __FUNCTION__, kind));
+        assert(0 && format("unrecognized %d", kind));
+}
+
+static const char *unaopk_to_str(UnaopKind kind)
+{
+        switch (kind) {
+        case UNAOP_NEG:
+                return "neg";
+        }
+
+        assert(0 && format("unrecognized %d", kind));
 }
 
 static void dump_literal(NodeLit *node, FILE *file)
@@ -94,13 +113,21 @@ static void dump_literal(NodeLit *node, FILE *file)
         assert(file);
 
         fprintf(file, "i" SV_Fmt, (int)node->str.count, node->str.data);
-        switch (node->kind) {
-        case LK_INT: {
-        } break;
-        }
 }
 
 static void dump_node(Node *node, FILE *file, u32 indent);
+static void dump_unaop(NodeUnaop *node, FILE *file, u32 indent)
+{
+        assert(node);
+        assert(file);
+
+        fprintf(file, "unary(%s,\n", unaopk_to_str(node->kind));
+
+        dump_indent(file, indent);
+        dump_node(node->expr, file, indent + 1);
+        fputs(")", file);
+}
+
 static void dump_binop(NodeBinop *node, FILE *file, u32 indent)
 {
         assert(node);
@@ -126,14 +153,18 @@ static void dump_node(Node *node, FILE *file, u32 indent)
         switch (node->kind) {
         case NK_LIT:
                 dump_literal(&node->as.lit, file);
-                break;
+                return;
         case NK_BINOP:
                 dump_binop(&node->as.binop, file, indent);
-                break;
-        default:
-                assert(0 && format("%s:%d %s unrecognized %d", __FILE__,
-                                   __LINE__, __FUNCTION__, node->kind));
+                return;
+        case NK_UNAOP:
+                dump_unaop(&node->as.unaop, file, indent);
+                return;
+
+        case NK_BAD:
         }
+
+        assert(0 && format("unrecognized %d", node->kind));
 }
 
 void ast_dump(Ast ast, FILE *file)

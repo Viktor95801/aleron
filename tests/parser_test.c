@@ -31,6 +31,6 @@ UTEST(parser, ast_dump)
 
 UTEST(parser, ast_from_str)
 {
-        Ast rca(ast) = parse("1 * 2 + 3 + 1");
+        Ast rca(ast) = parse("-1 * 2 + -+-+-(3 + 1)");
         ast_dump(ast, stdout);
 }

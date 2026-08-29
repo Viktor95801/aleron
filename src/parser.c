@@ -50,6 +50,7 @@ static void expect(Parser *p, TokenKind kind, const char *what)
 static Node *expr(Parser *p);
 static Node *eadd(Parser *p);
 static Node *emul(Parser *p);
+static Node *eunary(Parser *p);
 static Node *eprimary(Parser *p);
 
 Ast parse(const char *source)
@@ -87,20 +88,32 @@ static Node *eadd(Parser *p)
 
 static Node *emul(Parser *p)
 {
-        Node *left = eprimary(p);
+        Node *left = eunary(p);
 
         for (;;) {
                 if (consume(p, TK_MUL)) {
-                        left = new_binop(BINOP_MUL, left, eprimary(p));
+                        left = new_binop(BINOP_MUL, left, eunary(p));
                         continue;
                 }
                 if (consume(p, TK_DIV)) {
-                        left = new_binop(BINOP_DIV, left, eprimary(p));
+                        left = new_binop(BINOP_DIV, left, eunary(p));
                         continue;
                 }
 
                 return left;
         }
+}
+
+static Node *eunary(Parser *p)
+{
+        if (consume(p, TK_ADD)) {
+                return eunary(p);
+        }
+        if (consume(p, TK_SUB)) {
+                return new_unary(UNAOP_NEG, eunary(p));
+        }
+
+        return eprimary(p);
 }
 
 static Node *eprimary(Parser *p)

@@ -21,7 +21,7 @@ UTEST(codegen, string_builder)
 
 UTEST(codegen, gen)
 {
-        Ast rca(ast) = parse("(1 + 2) * 3");
+        Ast rca(ast) = parse("-(1 + 2) * 3");
         ast_dump(ast, stdout);
         char *res = codegen(ast);
         puts(res);

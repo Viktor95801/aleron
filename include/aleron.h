@@ -8,7 +8,7 @@
 
 #pragma region error
 
-__attribute__((noreturn)) void error(char *fmt, ...);
+__attribute__((noreturn)) void error(const char *fmt, ...);
 __attribute__((noreturn)) void verror_at(const char *source, const char *loc,
                                          char *fmt, va_list ap);
 __attribute__((noreturn)) void error_at(const char *source, const char *loc,
@@ -54,7 +54,7 @@ typedef enum {
         NK_LIT,
 
         NK_BINOP,
-        NK_end
+        NK_UNAOP,
 } NodeKind;
 
 typedef struct Node Node;
@@ -71,17 +71,25 @@ typedef enum {
         BINOP_SUB,
         BINOP_MUL,
         BINOP_DIV,
-        BINOP_end,
 } BinopKind;
 typedef struct NodeBinop {
         BinopKind kind;
         Node *left, *right;
 } NodeBinop;
 
+typedef enum {
+        UNAOP_NEG,
+} UnaopKind;
+typedef struct {
+        UnaopKind kind;
+        Node *expr;
+} NodeUnaop;
+
 struct Node {
         NodeKind kind;
         union {
                 NodeLit lit;
+                NodeUnaop unaop;
                 NodeBinop binop;
         } as;
 };
@@ -91,6 +99,7 @@ typedef Node *Ast;
 void destroy_node(void *ptr);
 Node *new_node(NodeKind kind);
 Node *new_lit(LiteralKind kind, String_View str);
+Node *new_unary(UnaopKind kind, Node *inside);
 Node *new_binop(BinopKind kind, Node *left, Node *right);
 
 const char *binopk_to_str(BinopKind kind);
