@@ -35,12 +35,11 @@ static void builder_destroy(char *sb)
         arrfree(sb);
 }
 
-static i32 var_name_counter = 0;
-
-static void codegen_expr(Ast ast, char **sb, const char *var_name);
+static void codegen_expr(Ast ast, char **sb, const char *var_name,
+                         int *ssa_index);
 static void codegen_expr_lit(NodeLit *lit, char **sb, const char *var_name);
-static void codegen_expr_binary(NodeBinop *bin, char **sb,
-                                const char *var_name);
+static void codegen_expr_binary(NodeBinop *bin, char **sb, const char *var_name,
+                                int *ssa_index);
 
 static void codegen_expr_lit(NodeLit *lit, char **sb, const char *var_name)
 {
@@ -49,25 +48,27 @@ static void codegen_expr_lit(NodeLit *lit, char **sb, const char *var_name)
                                (int)lit->str.count, lit->str.data));
 }
 
-static void codegen_expr_binary(NodeBinop *bin, char **sb, const char *var_name)
+static void codegen_expr_binary(NodeBinop *bin, char **sb, const char *var_name,
+                                int *ssa_index)
 {
-        const char *rc_str(left_name, format("l%d", var_name_counter));
-        const char *rc_str(right_name, format("r%d", var_name_counter++));
-        codegen_expr(bin->left, sb, left_name);
-        codegen_expr(bin->right, sb, right_name);
+        const char *rc_str(left_name, format("l%d", *ssa_index));
+        const char *rc_str(right_name, format("r%d", (*ssa_index)++));
+        codegen_expr(bin->left, sb, left_name, ssa_index);
+        codegen_expr(bin->right, sb, right_name, ssa_index);
 
         builder_add(sb,
                     format("  %%%s =w %s %%%s, %%%s", var_name,
                            binopk_to_str(bin->kind), left_name, right_name));
 }
 
-static void codegen_expr(Ast ast, char **sb, const char *var_name)
+static void codegen_expr(Ast ast, char **sb, const char *var_name,
+                         int *ssa_index)
 {
         assert(ast);
 
         switch (ast->kind) {
         case NK_BINOP: {
-                codegen_expr_binary(&ast->as.binop, sb, var_name);
+                codegen_expr_binary(&ast->as.binop, sb, var_name, ssa_index);
         } break;
         case NK_LIT: {
                 codegen_expr_lit(&ast->as.lit, sb, var_name);
@@ -89,7 +90,9 @@ char *codegen(Ast ast)
         builder_add(&builder, format("export function w $main() {\n"
                                      "@start"));
 
-        codegen_expr(ast, &builder, "x");
+        int ssa_index = 0;
+        codegen_expr(ast, &builder, "x", &ssa_index);
+
         builder_add(&builder, "  ret %x");
         builder_add(&builder, "}");
         builder_null(&builder);
