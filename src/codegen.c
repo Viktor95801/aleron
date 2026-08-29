@@ -78,8 +78,6 @@ static void codegen_expr(Ast ast, char *sb, const char *var_name)
                 error("invalid expression");
                 break;
         }
-
-        builder_add(&sb, format("  ret %%%s", var_name));
 }
 
 // must free
@@ -93,7 +91,7 @@ char *codegen(Ast ast)
                                      "@start"));
 
         codegen_expr(ast, builder, "x");
-
+        builder_add(&builder, "  ret %x");
         builder_add(&builder, "}");
         builder_null(&builder);
 
