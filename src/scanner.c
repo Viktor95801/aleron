@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include "crc.h"
+#include "util.h"
 
 // here for tracing
 inline char *scanner_next_char(char **src)
