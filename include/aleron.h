@@ -95,4 +95,10 @@ void ast_dump(Ast ast, FILE *file);
 
 #pragma endregion
 
+#pragma region parser
+
+Ast parse(const char *source);
+
+#pragma endregion
+
 #endif // ALERON_H
