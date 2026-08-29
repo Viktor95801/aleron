@@ -1,7 +1,6 @@
 #include "aleron.h"
 #include "util.h"
 #include "vendor/utest.h"
-#include <stdio.h>
 
 struct {
         char *name, *it;

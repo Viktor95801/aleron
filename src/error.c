@@ -3,6 +3,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+void error(char *fmt, ...)
+{
+        va_list ap;
+        va_start(ap, fmt);
+        vfprintf(stderr, fmt, ap);
+        fprintf(stderr, "\n");
+        exit(1);
+}
+
 // TODO: fileset so we can print the line and col as well
 void verror_at(const char *source, const char *loc, char *fmt, va_list ap)
 {

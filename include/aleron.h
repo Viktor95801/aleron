@@ -8,6 +8,7 @@
 
 #pragma region error
 
+__attribute__((noreturn)) void error(char *fmt, ...);
 __attribute__((noreturn)) void verror_at(const char *source, const char *loc,
                                          char *fmt, va_list ap);
 __attribute__((noreturn)) void error_at(const char *source, const char *loc,
@@ -100,6 +101,13 @@ void ast_dump(Ast ast, FILE *file);
 #pragma region parser
 
 Ast parse(const char *source);
+
+#pragma endregion
+
+#pragma region codegen
+
+char *codegen(Ast ast);
+void codegen_destroy(char *data);
 
 #pragma endregion
 

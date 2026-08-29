@@ -22,6 +22,6 @@ typedef double f64;
 
 typedef u8 byte;
 
-const char *format(const char *text, ...);
+__attribute__((format(printf, 1, 2))) const char *format(const char *text, ...);
 
 #endif
