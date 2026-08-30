@@ -1,2 +1,1 @@
-#!/bin/sh
-make -j16 && LSAN_OPTIONS=suppressions=suppressions.txt ./aleron "$@"
+make -j16 > /dev/null && ./aleron $@

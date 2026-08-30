@@ -1,0 +1,7 @@
+https://github.com/rui314/chibicc/commits/main?after=90d1f7f199cc55b13c7fdb5839d1409806633fdb+279
+continue implementing
+add fileset and better errors
+refactor parser and lexer
+refactor codegen
+refactor testing / add snapshot testing too. maybe just make a python tester and we're good to go
+make a rule 110 example -

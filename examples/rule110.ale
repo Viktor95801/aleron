@@ -1,0 +1,81 @@
+// idea 1 for syntax and semantics.
+// prob gonna make it a little lower level to make
+// it easier to compile and parse.
+
+use core:{fmt, ds}
+
+type Rule110 struct {
+        state 'Vec!bool; // private by default
+}
+
+// string is but a char slice
+// this is like a impl in rust without a self param
+pub fun Rule110:new(str 'string) > Maybe!Rule110 {
+        if str.len() == 0 {
+                return Nothing{};
+        }
+
+        // context is similar to odin's context
+        result '= Vec:new!bool(context.allocator);
+        result.reserve(str.len()); // .try_reserve if you want to handle the alloc error
+        // defer result.del(); // ref counted. this is implicit
+
+        for c '= in str {
+                if c {
+                        "0": result.push(false);
+                        "1": result.push(true);
+                        _: return Nothing{};
+                }
+        }
+
+        // .new() returns Self and increments the ref count. also implicit
+        return Just{ Rule110{ .state = result/* .new() */ } };
+}
+
+// '.' receives an implicit "^this" param
+pub fun Rule110.tick() {
+        new '= Vec:new!bool(context.allocator);
+        new.push(this.state[0]);
+
+        // suppose we have "11011", this does
+        // "110"
+        // "101"
+        // "011"
+        for (a, b, c) '= in this.state.windows(3) {
+                if (a, b, c) == {
+                        // >0 implicitly becomes true
+                        // and 0 becomes false. the only implicit conversion
+                        (1, 1, 1): new.push(false);
+                        (1, 1, 0): new.push(true);
+                        (1, 0, 1): new.push(true);
+                        (1, 0, 0): new.push(false);
+                        (0, 1, 1): new.push(true);
+                        (0, 1, 0): new.push(true);
+                        (0, 0, 1): new.push(true);
+                        (0, 0, 0): new.push(false);
+                }
+        }
+
+        new.push(this.state[this.state.len() - 1]);
+        this.state = new;
+}
+
+// ds:String is an owned string type
+pub fun for fmt:Stringer Rule110.string() > ds:String {
+        out '= ds:String:new(context.allocator);
+        for v '= in this.state {
+                out.push("1" if v else "0");
+        }
+
+        return out;
+}
+
+pub fun main() > i32 {
+        rule110 '= Rule110:new("0000000001");
+        for _ '= in 1..=20 {
+                fmt:@println("{}", rule110);
+                rule110.tick();
+        }
+
+        return 0;
+}
