@@ -3,5 +3,5 @@ continue implementing
 add fileset and better errors
 refactor parser and lexer
 refactor codegen
-refactor testing / add snapshot testing too. maybe just make a python tester and we're good to go
-make a rule 110 example -
+refactor unit testing: test only the small functions and the static functions from each module instead of entire pipelines like before (that's for snapshot testing)
+make a rule 110 example - experimenting syntax

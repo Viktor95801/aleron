@@ -18,13 +18,3 @@ UTEST(codegen, string_builder)
         builder_destroy(sb);
 }
  */
-
-UTEST(codegen, gen)
-{
-        Ast rca(ast) = parse("-(1 + 2) * 3");
-        ast_dump(ast, stdout);
-        char *res = codegen(ast);
-        puts(res);
-
-        codegen_destroy(res);
-}
