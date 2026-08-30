@@ -1,0 +1,5 @@
+{
+  "code": 0,
+  "stdout": "export function w $main() {\n@start\n  %x =w copy 0\n  ret %x\n}\n\n",
+  "stderr": ""
+}

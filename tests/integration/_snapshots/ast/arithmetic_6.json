@@ -1,0 +1,5 @@
+{
+  "code": 0,
+  "stdout": "binary(mul,\n  i5,\n  binary(sub,\n    i9,\n    i6))\n",
+  "stderr": ""
+}
