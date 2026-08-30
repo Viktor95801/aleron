@@ -3,12 +3,12 @@
 import argparse
 import json
 import os
-import pathlib
 import stat
 import subprocess as sp
 import sys
 import tempfile
 from enum import Enum
+from pathlib import Path
 
 ALERON = "./aleron"
 QBE = "qbe"
@@ -46,15 +46,15 @@ def argparser() -> argparse.ArgumentParser:
     _ = snapshot_parent.add_argument(
         "-sd",
         "--snap-dir",
-        type=pathlib.Path,
-        default=pathlib.Path("tests/integration/_snapshots/"),
+        type=Path,
+        default=Path("tests/integration/_snapshots/"),
         help="Which dir to look for and update snapshots",
     )
     _ = snapshot_parent.add_argument(
         "-fd",
         "--file-dir",
-        type=pathlib.Path,
-        default=pathlib.Path("tests/integration/"),
+        type=Path,
+        default=Path("tests/integration/"),
         help="Which dir to look for the files to run for the snapshot",
     )
     _ = snapshot_parent.add_argument(
@@ -69,8 +69,8 @@ def argparser() -> argparse.ArgumentParser:
     _ = unit_parent.add_argument(
         "-r",
         "--runner",
-        type=pathlib.Path,
-        default=pathlib.Path("./tests/test_runner"),
+        type=Path,
+        default=Path("./tests/test_runner"),
         help="Path to the 'test_runner' file",
     )
     _ = unit_parent.add_argument(
@@ -103,8 +103,13 @@ def argparser() -> argparse.ArgumentParser:
     _ = snapshot_group.add_argument(
         "-u",
         "--update",
-        type=pathlib.Path,
+        type=Path,
         help="A file to run and update its snapshot",
+    )
+    _ = snapshot_group.add_argument(
+        "-ub",
+        "--update-by",
+        help='Recursively update files in the file dir by a "regex" string, e.g.: basics/*.ale',
     )
     _ = snapshot_group.add_argument(
         "-ua",
@@ -126,7 +131,7 @@ def handle_all(args: argparse.Namespace) -> None:
 
 
 def handle_unit(args: argparse.Namespace) -> None:
-    runner: pathlib.Path = args.runner
+    runner: Path = args.runner
     if not runner.is_file():
         print(f"{runner} is not a file. Please provide a valid path.")
         sys.exit(1)
@@ -145,24 +150,25 @@ def handle_snapshot(args: argparse.Namespace) -> None:
         return
 
     stage = Stage(args.stage)
-    snap_dir: pathlib.Path = args.snap_dir.resolve()
-    file_dir: pathlib.Path = args.file_dir.resolve()
+    snap_dir: Path = args.snap_dir.resolve()
+    file_dir: Path = args.file_dir.resolve()
 
-    update: pathlib.Path | None = (
-        (file_dir / args.update).resolve() if args.update else None
-    )
+    update: Path | None = (file_dir / args.update).resolve() if args.update else None
+    update_by: str | None = args.update_by
     update_all: str | None = args.update_all
 
     snap_dir.mkdir(parents=True, exist_ok=True)
     file_dir.mkdir(parents=True, exist_ok=True)
 
-    files_and_snaps: dict[pathlib.Path, pathlib.Path] = {
-        f.resolve(): snap_dir / stage.value / f.with_suffix(".json").name
+    files_and_snaps: dict[Path, Path] = {
+        f.resolve(): snap_dir
+        / stage.value
+        / f.relative_to(file_dir).with_suffix(".json")
         for f in file_dir.rglob("*.ale")
         if f.is_file()
     }
 
-    def update_snapshot(file: pathlib.Path, snap: pathlib.Path) -> None:
+    def update_snapshot(file: Path, snap: Path) -> None:
         print(f"[{stage.value.upper()}] Updating snapshot for file: {file.name}")
         info = run_aleron(file, stage)
         snap.parent.mkdir(parents=True, exist_ok=True)
@@ -172,10 +178,28 @@ def handle_snapshot(args: argparse.Namespace) -> None:
     if update:
         snap = files_and_snaps.get(update)
         if not snap:
-            print(f"Error: {update} not found in {file_dir}")
+            print(f"[{stage.value.upper()}] Error: {update} not found in {file_dir}")
             sys.exit(1)
 
         update_snapshot(update, snap)
+        print(f"[{stage.value.upper()}] Done.")
+        return
+
+    if update_by:
+        files = file_dir.rglob(update_by)
+        for file in files:
+            if file.is_relative_to(snap_dir):
+                continue
+            snap = files_and_snaps.get(file)
+            if not snap:
+                start = f"[{stage.value.upper()}]"
+                align = len(start)
+                print(f"{start} File not found: {file.name}, skipping.")
+                print(
+                    f'{" " * align} Try adding ".ale" to the pattern, e. g.: {update_by + ".ale"}'
+                )
+                continue
+            update_snapshot(file, snap)
         print(f"[{stage.value.upper()}] Done.")
         return
 
@@ -209,7 +233,7 @@ def run_make() -> None:
     _ = sp.run(["make", "all"], check=True)
 
 
-def run_aleron(path: pathlib.Path, stage: Stage) -> dict[str, int | str]:
+def run_aleron(path: Path, stage: Stage) -> dict[str, int | str]:
     path_str = str(path.resolve())
     assert path_str.endswith(".ale")
 
