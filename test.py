@@ -110,7 +110,7 @@ def argparser() -> argparse.ArgumentParser:
 def handle_all(args: argparse.Namespace):
     args.update = None
     args.update_all = None
-    args.suite = None
+    args.list = False
 
     handle_unit(args)
     handle_snapshot(args)
