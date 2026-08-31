@@ -77,6 +77,10 @@ Ast parse(const char *source)
 
 static Node *sstmt(Parser *p)
 {
+        // ignore empty statements
+        if (consume(p, TK_SEMI)) {
+                return sstmt(p);
+        }
         return sexpr(p);
 }
 
