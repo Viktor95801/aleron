@@ -22,9 +22,15 @@ CC: str = "clang"
 
 
 class Stage(str, Enum):
+    LEX = "lex"
     AST = "ast"
     IR = "ir"
     BIN = "bin"
+
+
+@functools.cache
+def stage_is_failable(stage: Stage) -> bool:
+    return bool(stage == Stage.LEX or stage == Stage.AST)
 
 
 def main() -> None:
@@ -72,7 +78,7 @@ def argparser() -> argparse.ArgumentParser:
     _ = snapshot_parent.add_argument(
         "-st",
         "--stage",
-        choices=("all", "ast", "ir", "bin"),
+        choices=("all", "lex", "ast", "ir", "bin"),
         default="all",
         help="Which stage of the compiler to test",
     )
@@ -175,7 +181,7 @@ def execute_test(file: Path, stage: Stage) -> dict[str, Any] | None:
     """Executes Aleron safely, handling expected and unexpected compilation passes/failures."""
     expects_failure: bool = should_fail_compilation(file)
 
-    if expects_failure and stage != Stage.AST:
+    if expects_failure and not stage_is_failable(stage):
         return None
 
     try:
@@ -229,7 +235,7 @@ def update_snapshot(file: Path, snap: Path, stage: Stage) -> None:
 
 def test_single_snapshot(file: Path, snap: Path, stage: Stage) -> bool:
     if not snap.exists():
-        if should_fail_compilation(file) and stage != Stage.AST:
+        if should_fail_compilation(file) and not stage_is_failable(stage):
             return False
         print(
             f"[{stage.value.upper()}] Missing snapshot for {file.name}. Generate via: -ua new"
@@ -380,7 +386,7 @@ def run_aleron(path: Path, stage: Stage) -> dict[str, Any]:
     with open(path_str, "r") as f:
         contents = f.read()
 
-    if stage in (Stage.AST, Stage.IR):
+    if stage in (Stage.LEX, Stage.AST, Stage.IR):
         process: sp.CompletedProcess[bytes] = sp.run(
             [ALERON, f"-e={stage.value}", contents],
             capture_output=True,

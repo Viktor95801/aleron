@@ -1,0 +1,5 @@
+{
+  "code": 0,
+  "stdout": "int:12\n+\nint:34\n-\nint:5\n;\n",
+  "stderr": ""
+}

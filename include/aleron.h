@@ -22,6 +22,7 @@ typedef enum {
         TK_INVALID = -1,
         TK_EOF,
 
+        TK_ID,
         TK_INT,
 
         TK_ADD,
@@ -45,6 +46,10 @@ typedef struct {
         const char *error;
 } ScanResult;
 
+#define Mtokstr_fmt(tok) (int)(tok).str.count, (tok).str.data
+
+// uses format() buffer, so not thread safe and all
+const char *token_to_str(Token *token);
 ScanResult next_token(char **src);
 
 #pragma endregion

@@ -1,0 +1,5 @@
+{
+  "code": 1,
+  "stdout": "invalid:2k2ka\nERROR: number contains letters: 2k2ka\ninvalid:0x123\nERROR: number contains letters: 0x123\n",
+  "stderr": ""
+}

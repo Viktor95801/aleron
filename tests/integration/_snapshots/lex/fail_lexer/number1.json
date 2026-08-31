@@ -1,0 +1,5 @@
+{
+  "code": 1,
+  "stdout": "invalid:1qwer\nERROR: number contains letters: 1qwer\n",
+  "stderr": ""
+}
