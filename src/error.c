@@ -13,7 +13,7 @@ void error(const char *fmt, ...)
 }
 
 // TODO: fileset so we can print the line and col as well
-void verror_at(const char *source, const char *loc, char *fmt, va_list ap)
+void verror_at(const char *source, const char *loc, const char *fmt, va_list ap)
 {
         fprintf(stderr, "%s\n", source);
         fprintf(stderr, "%*s", (int)(loc - source), ""); // print pos spaces.
@@ -23,7 +23,7 @@ void verror_at(const char *source, const char *loc, char *fmt, va_list ap)
         exit(1);
 }
 
-void error_at(const char *source, const char *loc, char *fmt, ...)
+void error_at(const char *source, const char *loc, const char *fmt, ...)
 {
         va_list ap;
         va_start(ap, fmt);

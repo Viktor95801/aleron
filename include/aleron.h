@@ -10,9 +10,9 @@
 
 __attribute__((noreturn)) void error(const char *fmt, ...);
 __attribute__((noreturn)) void verror_at(const char *source, const char *loc,
-                                         char *fmt, va_list ap);
+                                         const char *fmt, va_list ap);
 __attribute__((noreturn)) void error_at(const char *source, const char *loc,
-                                        char *fmt, ...);
+                                        const char *fmt, ...);
 
 #pragma endregion
 
@@ -29,6 +29,7 @@ typedef enum {
         TK_SUB,
         TK_MUL,
         TK_DIV,
+        TK_ASS,
 
         TK_OPAREN,
         TK_CPAREN,
@@ -69,6 +70,7 @@ typedef enum {
 
 typedef struct Node Node;
 typedef enum {
+        LK_ID,
         LK_INT,
 } LiteralKind;
 typedef struct NodeLit {
@@ -81,6 +83,7 @@ typedef enum {
         BINOP_SUB,
         BINOP_MUL,
         BINOP_DIV,
+        BINOP_ASS,
 } BinopKind;
 typedef struct NodeBinop {
         BinopKind kind;

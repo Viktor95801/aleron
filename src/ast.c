@@ -123,6 +123,8 @@ const char *binopk_to_str(BinopKind kind)
                 return "mul";
         case BINOP_DIV:
                 return "div";
+        case BINOP_ASS:
+                return "ass";
         }
 
         assert(0 && format("unrecognized %d", kind));
@@ -171,7 +173,14 @@ static void dump_literal(NodeLit *node, FILE *file)
         assert(node);
         assert(file);
 
-        fprintf(file, "i" SV_Fmt, (int)node->str.count, node->str.data);
+        switch (node->kind) {
+        case LK_INT:
+                fprintf(file, SV_Fmt ":int", Mtokstr_fmt(*node));
+                break;
+        case LK_ID:
+                fprintf(file, SV_Fmt ":id", Mtokstr_fmt(*node));
+                break;
+        }
 }
 
 static void dump_node(Node *node, FILE *file, u32 indent);

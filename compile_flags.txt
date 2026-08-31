@@ -1,3 +1,4 @@
+-Werror
 -Wall
 -Wextra
 -std=c23

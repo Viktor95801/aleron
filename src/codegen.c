@@ -44,9 +44,8 @@ static void codegen_stmt_expr(NodeStExpr *node, char **sb);
 
 static void codegen_expr(Ast ast, char **sb, const char *var_name);
 static void codegen_expr_lit(NodeLit *lit, char **sb, const char *var_name);
-static void codegen_expr_unary(NodeUnaop *una, char **sb, const char *var_name);
-static void codegen_expr_binary(NodeBinop *bin, char **sb,
-                                const char *var_name);
+static void codegen_expr_unaop(NodeUnaop *una, char **sb, const char *var_name);
+static void codegen_expr_binop(NodeBinop *bin, char **sb, const char *var_name);
 
 static void codegen_stmt(Node *node, char **sb)
 {
@@ -91,7 +90,7 @@ static void codegen_expr_lit(NodeLit *lit, char **sb, const char *var_name)
                                (int)lit->str.count, lit->str.data));
 }
 
-static void codegen_expr_unary(NodeUnaop *una, char **sb, const char *var_name)
+static void codegen_expr_unaop(NodeUnaop *una, char **sb, const char *var_name)
 {
         assert(una->kind == UNAOP_NEG);
         const char *rc_str(name, format("tmp%zu", next_reg++));
@@ -100,7 +99,7 @@ static void codegen_expr_unary(NodeUnaop *una, char **sb, const char *var_name)
         builder_add(sb, format("  %%%s =w mul %%%s, -1", var_name, name));
 }
 
-static void codegen_expr_binary(NodeBinop *bin, char **sb, const char *var_name)
+static void codegen_expr_binop(NodeBinop *bin, char **sb, const char *var_name)
 {
         const char *rc_str(left_name, format("l%zu", next_reg++));
         codegen_expr(bin->left, sb, left_name);
@@ -118,12 +117,12 @@ static void codegen_expr(Node *node, char **sb, const char *var_name)
 
         switch (node->kind) {
         case NKEx_UNAOP: {
-                codegen_expr_unary(&node->as.unaop, sb, var_name);
+                codegen_expr_unaop(&node->as.unaop, sb, var_name);
                 return;
         } break;
 
         case NKEx_BINOP: {
-                codegen_expr_binary(&node->as.binop, sb, var_name);
+                codegen_expr_binop(&node->as.binop, sb, var_name);
                 return;
         } break;
 

@@ -50,6 +50,7 @@ static void expect(Parser *p, TokenKind kind, const char *what)
 }
 
 static Node *expr(Parser *p);
+static Node *eass(Parser *p);
 static Node *eadd(Parser *p);
 static Node *emul(Parser *p);
 static Node *eunary(Parser *p);
@@ -57,7 +58,7 @@ static Node *eprimary(Parser *p);
 
 static Node *sstmt(Parser *p);
 static Node *sexpr(Parser *p);
-static Node *sblock(Parser *p);
+// static Node *sblock(Parser *p);
 
 Ast parse(const char *source)
 {
@@ -90,7 +91,22 @@ static Node *sexpr(Parser *p)
 
 static Node *expr(Parser *p)
 {
-        return eadd(p);
+        return eass(p);
+}
+
+static Node *eass(Parser *p)
+{
+        Node *left = eadd(p);
+        const char *possible_ident_pos = p->ptok.str.data;
+        if (consume(p, TK_ASS)) {
+                if (left->kind != NKEx_LIT || left->as.lit.kind != LK_ID) {
+                        error_at(p->src, possible_ident_pos,
+                                 "expected a variable name");
+                }
+                left = new_binop(BINOP_ASS, left, expr(p));
+        }
+
+        return left;
 }
 
 static Node *eadd(Parser *p)
@@ -146,6 +162,12 @@ static Node *eprimary(Parser *p)
         if (consume(p, TK_OPAREN)) {
                 Node *node = expr(p);
                 expect(p, TK_CPAREN, "')'");
+                return node;
+        }
+
+        if (p->ctok.kind == TK_ID) {
+                Node *node = new_lit(LK_ID, p->ctok.str);
+                advance(p);
                 return node;
         }
 
