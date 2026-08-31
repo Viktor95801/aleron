@@ -5,6 +5,7 @@
 
 #include "crc.h"
 #include "util.h"
+#include "vendor/stb_ds.h"
 #include "vendor/sv.h"
 
 void destroy_node(void *ptr)
@@ -12,16 +13,28 @@ void destroy_node(void *ptr)
         assert(ptr);
         Node *node = ptr;
         switch (node->kind) {
-        case NK_BINOP: {
+        case NKSt_BLOCK: {
+                NodeStBlock block = node->as.stblock;
+                for (int i = 0; i < arrlen(block.list); ++i) {
+                        del(block.list[i]);
+                }
+                arrfree(block.list);
+        } break;
+        case NKSt_EXPR: {
+                NodeStExpr stexpr = node->as.stexpr;
+                del(stexpr.expr);
+        } break;
+
+        case NKEx_BINOP: {
                 NodeBinop binop = node->as.binop;
                 del(binop.left);
                 del(binop.right);
         } break;
-        case NK_UNAOP: {
+        case NKEx_UNAOP: {
                 NodeUnaop unaop = node->as.unaop;
                 del(unaop.expr);
         } break;
-        case NK_LIT: {
+        case NKEx_LIT: {
         } break;
 
         case NK_BAD:
@@ -38,9 +51,27 @@ Node *new_node(NodeKind kind)
         return result;
 }
 
+Node *new_stblock(Node **list)
+{
+        Node *result = new_node(NKSt_BLOCK);
+        NodeStBlock *block = &result->as.stblock;
+        block->list = list;
+
+        return result;
+}
+
+Node *new_stexpr(Node *expr)
+{
+        Node *result = new_node(NKSt_EXPR);
+        NodeStExpr *stexpr = &result->as.stexpr;
+        stexpr->expr = expr;
+
+        return result;
+}
+
 Node *new_lit(LiteralKind kind, String_View str)
 {
-        Node *result = new_node(NK_LIT);
+        Node *result = new_node(NKEx_LIT);
         NodeLit *lit = &result->as.lit;
         lit->kind = kind;
         lit->str = str;
@@ -53,7 +84,7 @@ Node *new_binop(BinopKind kind, Node *left, Node *right)
         assert(left);
         assert(right);
 
-        Node *result = new_node(NK_BINOP);
+        Node *result = new_node(NKEx_BINOP);
         NodeBinop *binop = &result->as.binop;
         binop->kind = kind;
         binop->left = left;
@@ -66,7 +97,7 @@ Node *new_unary(UnaopKind kind, Node *inside)
 {
         assert(inside);
 
-        Node *result = new_node(NK_UNAOP);
+        Node *result = new_node(NKEx_UNAOP);
         NodeUnaop *unaop = &result->as.unaop;
         unaop->kind = kind;
         unaop->expr = inside;
@@ -105,6 +136,35 @@ static const char *unaopk_to_str(UnaopKind kind)
         }
 
         assert(0 && format("unrecognized %d", kind));
+}
+
+static void dump_node(Node *node, FILE *file, u32 indent);
+static void dump_stblock(NodeStBlock *node, FILE *file, u32 indent)
+{
+        assert(node);
+        assert(file);
+
+        fprintf(file, "block{\n");
+
+        for (int i = 0; i < arrlen(node->list); ++i) {
+                dump_indent(file, indent);
+                dump_node(node->list[i], file, indent + 1);
+        }
+
+        dump_indent(file, indent);
+        fputs("}\n", file);
+}
+
+static void dump_stexpr(NodeStExpr *node, FILE *file, u32 indent)
+{
+        assert(node);
+        assert(file);
+
+        fprintf(file, "stexpr{\n");
+
+        dump_indent(file, indent);
+        dump_node(node->expr, file, indent + 1);
+        fputs("}\n", file);
 }
 
 static void dump_literal(NodeLit *node, FILE *file)
@@ -151,13 +211,20 @@ static void dump_node(Node *node, FILE *file, u32 indent)
         assert(file);
 
         switch (node->kind) {
-        case NK_LIT:
+        case NKSt_BLOCK:
+                dump_stblock(&node->as.stblock, file, indent);
+                return;
+        case NKSt_EXPR:
+                dump_stexpr(&node->as.stexpr, file, indent);
+                return;
+
+        case NKEx_LIT:
                 dump_literal(&node->as.lit, file);
                 return;
-        case NK_BINOP:
+        case NKEx_BINOP:
                 dump_binop(&node->as.binop, file, indent);
                 return;
-        case NK_UNAOP:
+        case NKEx_UNAOP:
                 dump_unaop(&node->as.unaop, file, indent);
                 return;
 
@@ -169,6 +236,7 @@ static void dump_node(Node *node, FILE *file, u32 indent)
 
 void ast_dump(Ast ast, FILE *file)
 {
+        assert(ast);
         assert(file);
         dump_node(ast, file, 0);
         fputc('\n', file);

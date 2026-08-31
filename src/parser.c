@@ -53,12 +53,18 @@ static Node *emul(Parser *p);
 static Node *eunary(Parser *p);
 static Node *eprimary(Parser *p);
 
+static Node *sstmt(Parser *p);
+static Node *sblock(Parser *p);
+
 Ast parse(const char *source)
 {
         Parser p = {};
         init_parser(&p, source);
 
         Node *ast = expr(&p);
+        // while (p.ctok.kind != TK_EOF) {
+        //         Node *st = sstmt(&p);
+        // }
 
         return ast;
 }

@@ -31,6 +31,8 @@ typedef enum {
 
         TK_OPAREN,
         TK_CPAREN,
+
+        TK_SEMI,
 } TokenKind;
 
 typedef struct {
@@ -51,10 +53,13 @@ ScanResult next_token(char **src);
 
 typedef enum {
         NK_BAD,
-        NK_LIT,
 
-        NK_BINOP,
-        NK_UNAOP,
+        NKEx_LIT,
+        NKEx_BINOP,
+        NKEx_UNAOP,
+
+        NKSt_BLOCK,
+        NKSt_EXPR,
 } NodeKind;
 
 typedef struct Node Node;
@@ -85,18 +90,32 @@ typedef struct {
         Node *expr;
 } NodeUnaop;
 
+typedef struct {
+        Node **list; // stb_ds darray
+} NodeStBlock;
+
+typedef struct {
+        Node *expr;
+} NodeStExpr;
+
 struct Node {
         NodeKind kind;
         union {
                 NodeLit lit;
                 NodeUnaop unaop;
                 NodeBinop binop;
+
+                NodeStBlock stblock;
+                NodeStExpr stexpr;
         } as;
 };
 
 typedef Node *Ast;
 
 void destroy_node(void *ptr);
+Node *new_stblock(Node **list);
+Node *new_stexpr(Node *expr);
+
 Node *new_node(NodeKind kind);
 Node *new_lit(LiteralKind kind, String_View str);
 Node *new_unary(UnaopKind kind, Node *inside);

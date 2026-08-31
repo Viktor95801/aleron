@@ -80,17 +80,17 @@ static void codegen_expr(Ast ast, char **sb, const char *var_name,
         assert(ast);
 
         switch (ast->kind) {
-        case NK_UNAOP: {
+        case NKEx_UNAOP: {
                 codegen_expr_unary(&ast->as.unaop, sb, var_name, ssa_index);
                 return;
         } break;
 
-        case NK_BINOP: {
+        case NKEx_BINOP: {
                 codegen_expr_binary(&ast->as.binop, sb, var_name, ssa_index);
                 return;
         } break;
 
-        case NK_LIT: {
+        case NKEx_LIT: {
                 codegen_expr_lit(&ast->as.lit, sb, var_name);
                 return;
         } break;

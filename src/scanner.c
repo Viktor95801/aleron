@@ -52,6 +52,9 @@ ScanResult next_token(char **src)
         case ')':
                 singleCharCase(TK_CPAREN);
 
+        case ';':
+                singleCharCase(TK_SEMI);
+
         // we want it to stay here forever
         case '\0': {
                 return (ScanResult){ .token = { TK_EOF, { 1, *src } } };
