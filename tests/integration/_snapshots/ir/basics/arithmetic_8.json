@@ -1,5 +1,5 @@
 {
   "code": 0,
-  "stdout": "export function w $main() {\n@start\n  %tmp1 =w copy 10\n  %l0 =w mul %tmp1, -1\n  %r0 =w copy 20\n  %x =w add %l0, %r0\n  ret %x\n}\n\n",
+  "stdout": "export function w $main() {\n@start\n  %t =w copy 0\n  %tmp1 =w copy 10\n  %l0 =w mul %tmp1, -1\n  %r2 =w copy 20\n  %t =w add %l0, %r2\n  ret %t\n}\n\n",
   "stderr": ""
 }

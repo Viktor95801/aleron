@@ -10,6 +10,18 @@
 #include <stdio.h>
 #include <string.h>
 
-UTEST(ast, dump)
+// UTEST(ast, dump)
+// {
+//         Node **list = NULL;
+//         arrpush(list, new_stexpr(new_binop(BINOP_ADD, new_lit(LK_INT,
+//         SV("1")),
+//                                            new_lit(LK_INT, SV("1")))));
+//         Node *rca(node) = new_stblock(list);
+//         ast_dump(node, stdout);
+// }
+
+UTEST(parser, stmt_expr)
 {
+        Ast rca(ast) = parse("1 + 2; 2 + 4;");
+        ast_dump(ast, stdout);
 }

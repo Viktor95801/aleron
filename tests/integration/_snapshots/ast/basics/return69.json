@@ -1,5 +1,5 @@
 {
   "code": 0,
-  "stdout": "i69\n",
+  "stdout": "block{\n  expr{\n    i69}}\n",
   "stderr": ""
 }

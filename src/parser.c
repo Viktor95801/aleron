@@ -1,5 +1,7 @@
 #include "aleron.h"
 
+#include "vendor/stb_ds.h"
+
 typedef struct {
         const char *src;
         char *pos;
@@ -54,6 +56,7 @@ static Node *eunary(Parser *p);
 static Node *eprimary(Parser *p);
 
 static Node *sstmt(Parser *p);
+static Node *sexpr(Parser *p);
 static Node *sblock(Parser *p);
 
 Ast parse(const char *source)
@@ -61,12 +64,28 @@ Ast parse(const char *source)
         Parser p = {};
         init_parser(&p, source);
 
-        Node *ast = expr(&p);
-        // while (p.ctok.kind != TK_EOF) {
-        //         Node *st = sstmt(&p);
-        // }
+        Node **list = NULL;
+        while (p.ctok.kind != TK_EOF) {
+                Node *st = sstmt(&p);
+                arrpush(list, st);
+        }
+        Ast ast = new_stblock(list);
 
         return ast;
+}
+
+static Node *sstmt(Parser *p)
+{
+        return sexpr(p);
+}
+
+static Node *sexpr(Parser *p)
+{
+        Node *e = expr(p);
+        Node *se = new_stexpr(e);
+        expect(p, TK_SEMI, ";");
+
+        return se;
 }
 
 static Node *expr(Parser *p)

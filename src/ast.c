@@ -151,8 +151,7 @@ static void dump_stblock(NodeStBlock *node, FILE *file, u32 indent)
                 dump_node(node->list[i], file, indent + 1);
         }
 
-        dump_indent(file, indent);
-        fputs("}\n", file);
+        fputs("}", file);
 }
 
 static void dump_stexpr(NodeStExpr *node, FILE *file, u32 indent)
@@ -160,11 +159,11 @@ static void dump_stexpr(NodeStExpr *node, FILE *file, u32 indent)
         assert(node);
         assert(file);
 
-        fprintf(file, "stexpr{\n");
+        fprintf(file, "expr{\n");
 
         dump_indent(file, indent);
         dump_node(node->expr, file, indent + 1);
-        fputs("}\n", file);
+        fputs("}", file);
 }
 
 static void dump_literal(NodeLit *node, FILE *file)

@@ -223,33 +223,37 @@ def handle_snapshot(args: argparse.Namespace) -> None:
         info = run_aleron(file, stage)
         with open(snap, "r") as f:
             snapshot: dict[str, int | str] = json.load(f)
+
+        had_error = False
         if info["code"] != snapshot["code"]:
             print(f"Exit code mismatch on {file.name}")
             print(f"Expected {info['code']}, got {snapshot['code']}")
-            sys.exit(1)
+            had_error = True
         if info["stdout"] != snapshot["stdout"]:
             print(f"stdout mismatch on {file.name}")
             diff = difflib.unified_diff(
-                str(info["stdout"]).splitlines(),
                 str(snapshot["stdout"]).splitlines(),
+                str(info["stdout"]).splitlines(),
                 "expected",
                 "got",
                 lineterm="",
             )
             for line in diff:
                 print(line)
-            sys.exit(1)
+            had_error = True
         if info["stderr"] != snapshot["stderr"]:
             print(f"stderr mismatch on {file.name}")
             diff = difflib.unified_diff(
-                str(info["stderr"]).splitlines(),
                 str(snapshot["stderr"]).splitlines(),
+                str(info["stderr"]).splitlines(),
                 "expected",
                 "got",
                 lineterm="",
             )
             for line in diff:
                 print(line)
+            had_error = True
+        if had_error:
             sys.exit(1)
 
     print(f"[{stage.value.upper()}] All snapshot tests passed successfully.")
