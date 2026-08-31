@@ -7,12 +7,15 @@ import difflib
 import functools
 import json
 import os
+import shlex
 import stat
 import subprocess as sp
 import sys
 import tempfile
+from ast import literal_eval
 from enum import Enum
 from pathlib import Path
+from posix import mkdir
 from time import sleep
 from typing import Any, Optional
 
@@ -117,6 +120,14 @@ def argparser() -> argparse.ArgumentParser:
         help="Runs the snapshot tests to guarantee no regression",
         parents=[snapshot_parent],
     )
+    _ = parser_snapshot.add_argument(
+        "-f",
+        "--from-file",
+        type=Path,
+        metavar=("FILE[.txt]"),
+        help='A file to generate snapshots from with the format (assumes correct syntax): <stage> <binding path from file dir> <exit code:int> ["stdout"] ["stderr"];',
+    )
+
     snapshot_group: argparse._MutuallyExclusiveGroup = (
         parser_snapshot.add_mutually_exclusive_group()
     )
@@ -292,7 +303,96 @@ def test_single_snapshot(file: Path, snap: Path, stage: Stage) -> bool:
     return had_error
 
 
+def snapshot_from(from_file: Path, file_dir: Path, snap_dir: Path):
+    lexer = shlex.shlex(from_file.read_text(), str(from_file))
+
+    def tok_to_str(tok: str | None) -> str:
+        return "<eof>" if tok == lexer.eof else str(tok)
+
+    def write_snap(stage: Stage, path: Path, code: int, stdout: str, stderr: str):
+        snap = snap_dir / stage.value / path.relative_to(file_dir).with_suffix(".json")
+        snap.parent.mkdir(parents=True, exist_ok=True)
+        with open(snap, "w") as f:
+            json.dump(
+                {
+                    "code": code,
+                    "stdout": stdout,
+                    "stderr": stderr,
+                },
+                f,
+            )
+
+    # goto would make this a lot easier
+    # goto is life
+    while True:
+        tok = lexer.get_token()
+        if tok == lexer.eof:
+            break
+        if tok not in Stage:
+            print(
+                f"ERROR: expected 'stage' name (choose from lex, ast, ir or bin), got: {tok_to_str(tok)}"
+            )
+            sys.exit(1)
+        from_stage = Stage(tok)
+
+        tok = lexer.get_token()
+        if tok == lexer.eof or tok == ";":
+            print(f"ERROR: expected a binding path, got: {tok_to_str(tok)}")
+            sys.exit(1)
+        from_path: Path = file_dir / Path(literal_eval(tok))
+        if not from_path.exists():
+            print(f"ERROR: {from_path} not found in {file_dir}")
+            sys.exit(1)
+
+        tok = lexer.get_token()
+        if tok == lexer.eof or tok == ";":
+            print(f"ERROR: expected an exit code, got: {tok_to_str(tok)}")
+            sys.exit(1)
+        try:
+            from_code: int = int(literal_eval(tok))
+        except ValueError as e:
+            print(f"ERROR: expected a valid integer: {e}")
+            sys.exit(1)
+
+        tok = lexer.get_token()
+        if tok == lexer.eof:
+            print(f"ERROR: expected a ';' or the stdout, got: {tok_to_str(tok)}")
+            sys.exit(1)
+        if tok == ";":
+            write_snap(from_stage, from_path, from_code, "", "")
+            continue
+        from_stdout = str(tok)
+
+        tok = lexer.get_token()
+        if tok == lexer.eof:
+            print(f"ERROR: expected a ';' or the stderr, got: {tok_to_str(tok)}")
+            sys.exit(1)
+        if tok == ";":
+            write_snap(from_stage, from_path, from_code, from_stdout, "")
+        from_stderr = str(tok)
+
+        tok = lexer.get_token()
+        if tok != ";":
+            print(f"ERROR: expected a ';', got: {tok_to_str(tok)}")
+            sys.exit(1)
+
+        write_snap(from_stage, from_path, from_code, from_stdout, from_stderr)
+
+    print(f"Done parsing: {from_file.name}")
+
+
 def handle_snapshot(args: argparse.Namespace) -> None:
+    snap_dir: Path = args.snap_dir.resolve()
+    file_dir: Path = args.file_dir.resolve()
+    from_file: Path | None = args.from_file
+    if from_file:
+        if not from_file.exists():
+            print(f"ERROR: {from_file.name} not found")
+            sys.exit(1)
+
+        snapshot_from(from_file, file_dir, snap_dir)
+        return
+
     if args.stage == "all":
         s: Stage
         for s in Stage:
@@ -301,8 +401,6 @@ def handle_snapshot(args: argparse.Namespace) -> None:
         return
 
     stage: Stage = Stage(args.stage)
-    snap_dir: Path = args.snap_dir.resolve()
-    file_dir: Path = args.file_dir.resolve()
 
     update: Path | None = (file_dir / args.update).resolve() if args.update else None
     update_by: str | None = args.update_by

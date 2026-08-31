@@ -1,0 +1,3 @@
+bin "basics/assign/ass1.ale" 3;
+bin "basics/assign/ass2.ale" 8;
+bin "basics/assign/ass3.ale" 9;
