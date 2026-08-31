@@ -36,49 +36,52 @@ static void builder_destroy(char *sb)
         arrfree(sb);
 }
 
-static void codegen_stmt(Node *node, char **sb, int *ssa_index);
-static void codegen_stmt_block(NodeStBlock *node, char **sb, int *ssa_index);
-static void codegen_stmt_expr(NodeStExpr *node, char **sb, int *ssa_index);
+static u64 next_reg = 0;
 
-static void codegen_expr(Ast ast, char **sb, const char *var_name,
-                         int *ssa_index);
+static void codegen_stmt(Node *node, char **sb);
+static void codegen_stmt_block(NodeStBlock *node, char **sb);
+static void codegen_stmt_expr(NodeStExpr *node, char **sb);
+
+static void codegen_expr(Ast ast, char **sb, const char *var_name);
 static void codegen_expr_lit(NodeLit *lit, char **sb, const char *var_name);
-static void codegen_expr_unary(NodeUnaop *una, char **sb, const char *var_name,
-                               int *ssa_index);
-static void codegen_expr_binary(NodeBinop *bin, char **sb, const char *var_name,
-                                int *ssa_index);
+static void codegen_expr_unary(NodeUnaop *una, char **sb, const char *var_name);
+static void codegen_expr_binary(NodeBinop *bin, char **sb,
+                                const char *var_name);
 
-static void codegen_stmt(Node *node, char **sb, int *ssa_index)
+static void codegen_stmt(Node *node, char **sb)
 {
         assert(node);
         switch (node->kind) {
         case NKSt_EXPR: {
-                codegen_stmt_expr(&node->as.stexpr, sb, ssa_index);
+                codegen_stmt_expr(&node->as.stexpr, sb);
                 return;
         } break;
         case NKSt_BLOCK: {
-                codegen_stmt_block(&node->as.stblock, sb, ssa_index);
+                codegen_stmt_block(&node->as.stblock, sb);
                 return;
         } break;
+
+        case NKEx_BINOP:
+        case NKEx_LIT:
+        case NKEx_UNAOP:
+        case NK_BAD:
         }
 
         error(format("invalid statement %d", node->kind));
 }
 
-static void codegen_stmt_block(NodeStBlock *node, char **sb, int *ssa_index)
+static void codegen_stmt_block(NodeStBlock *node, char **sb)
 {
         assert(node);
 
-        *ssa_index *= 10;
         for (int i = 0; i < arrlen(node->list); ++i) {
-                *ssa_index += i;
-                codegen_stmt(node->list[i], sb, ssa_index);
+                codegen_stmt(node->list[i], sb);
         }
 }
 
-static void codegen_stmt_expr(NodeStExpr *node, char **sb, int *ssa_index)
+static void codegen_stmt_expr(NodeStExpr *node, char **sb)
 {
-        codegen_expr(node->expr, sb, "t", ssa_index);
+        codegen_expr(node->expr, sb, "t");
 }
 
 static void codegen_expr_lit(NodeLit *lit, char **sb, const char *var_name)
@@ -88,42 +91,39 @@ static void codegen_expr_lit(NodeLit *lit, char **sb, const char *var_name)
                                (int)lit->str.count, lit->str.data));
 }
 
-static void codegen_expr_unary(NodeUnaop *una, char **sb, const char *var_name,
-                               int *ssa_index)
+static void codegen_expr_unary(NodeUnaop *una, char **sb, const char *var_name)
 {
         assert(una->kind == UNAOP_NEG);
-        const char *rc_str(name, format("tmp%d", (*ssa_index)++));
-        codegen_expr(una->expr, sb, name, ssa_index);
+        const char *rc_str(name, format("tmp%zu", next_reg++));
+        codegen_expr(una->expr, sb, name);
 
         builder_add(sb, format("  %%%s =w mul %%%s, -1", var_name, name));
 }
 
-static void codegen_expr_binary(NodeBinop *bin, char **sb, const char *var_name,
-                                int *ssa_index)
+static void codegen_expr_binary(NodeBinop *bin, char **sb, const char *var_name)
 {
-        const char *rc_str(left_name, format("l%d", (*ssa_index)++));
-        codegen_expr(bin->left, sb, left_name, ssa_index);
-        const char *rc_str(right_name, format("r%d", (*ssa_index)++));
-        codegen_expr(bin->right, sb, right_name, ssa_index);
+        const char *rc_str(left_name, format("l%zu", next_reg++));
+        codegen_expr(bin->left, sb, left_name);
+        const char *rc_str(right_name, format("r%zu", next_reg++));
+        codegen_expr(bin->right, sb, right_name);
 
         builder_add(sb,
                     format("  %%%s =w %s %%%s, %%%s", var_name,
                            binopk_to_str(bin->kind), left_name, right_name));
 }
 
-static void codegen_expr(Node *node, char **sb, const char *var_name,
-                         int *ssa_index)
+static void codegen_expr(Node *node, char **sb, const char *var_name)
 {
         assert(node);
 
         switch (node->kind) {
         case NKEx_UNAOP: {
-                codegen_expr_unary(&node->as.unaop, sb, var_name, ssa_index);
+                codegen_expr_unary(&node->as.unaop, sb, var_name);
                 return;
         } break;
 
         case NKEx_BINOP: {
-                codegen_expr_binary(&node->as.binop, sb, var_name, ssa_index);
+                codegen_expr_binary(&node->as.binop, sb, var_name);
                 return;
         } break;
 
@@ -133,6 +133,8 @@ static void codegen_expr(Node *node, char **sb, const char *var_name,
         } break;
 
         case NK_BAD:
+        case NKSt_BLOCK:
+        case NKSt_EXPR:
         }
         error(format("invalid expression %d", node->kind));
 }
@@ -147,9 +149,8 @@ char *codegen(Ast ast)
         builder_add(&sb, "export function w $main() {\n"
                          "@start");
 
-        int ssa_index = 0;
         builder_add(&sb, "  %t =w copy 0");
-        codegen_stmt(ast, &sb, &ssa_index);
+        codegen_stmt(ast, &sb);
 
         builder_add(&sb, "  ret %t");
         builder_add(&sb, "}");
