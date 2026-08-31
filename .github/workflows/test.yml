@@ -26,7 +26,7 @@ jobs:
 
             - name: Install QBE
               run: |
-                  git clone https://c3d.librews.org/qbe.git
+                  git clone git://c9x.me/qbe.git
                   cd qbe
                   make -j16
                   sudo make install
