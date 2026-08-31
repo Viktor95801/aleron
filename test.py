@@ -156,6 +156,7 @@ def handle_all(args: argparse.Namespace) -> None:
     args.update = None
     args.update_all = None
     args.update_by = None
+    args.from_file = None
     args.list = False
 
     handle_unit(args)
