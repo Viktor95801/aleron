@@ -80,14 +80,27 @@ static void codegen_stmt_block(NodeStBlock *node, char **sb)
 
 static void codegen_stmt_expr(NodeStExpr *node, char **sb)
 {
-        codegen_expr(node->expr, sb, "t");
+        codegen_expr(node->expr, sb, ".");
 }
 
 static void codegen_expr_lit(NodeLit *lit, char **sb, const char *var_name)
 {
-        assert(lit->kind == LK_INT);
-        builder_add(sb, format("  %%%s =w copy %.*s", var_name,
-                               (int)lit->str.count, lit->str.data));
+        switch (lit->kind) {
+                // TODO: this doesnt handle the possibility of an undeclared
+                // identifier. the actual todo is to build a semantic analyser
+                // to make sure the types are correct and the scopes are working
+                // properly
+                // TODO: make sure dierct register assignings are as functional
+                // as stack alloc4, loadw and storew
+        case LK_ID:
+                builder_add(sb, format("  %%%s =w copy %%.var." SV_Fmt,
+                                       var_name, Mtokstr_fmt(*lit)));
+                break;
+        case LK_INT:
+                builder_add(sb, format("  %%%s =w copy %.*s", var_name,
+                                       (int)lit->str.count, lit->str.data));
+                break;
+        }
 }
 
 static void codegen_expr_unaop(NodeUnaop *una, char **sb, const char *var_name)
@@ -101,9 +114,23 @@ static void codegen_expr_unaop(NodeUnaop *una, char **sb, const char *var_name)
 
 static void codegen_expr_binop(NodeBinop *bin, char **sb, const char *var_name)
 {
-        const char *rc_str(left_name, format("l%zu", next_reg++));
+        if (bin->kind == BINOP_ASS) {
+                const char *rc_str(right_name, // intermediates
+                                   format(".tmp.ass%zu", next_reg++));
+                codegen_expr(bin->right, sb, right_name);
+                builder_add(sb, // declare local var
+                            format("  %%.var." SV_Fmt " =w copy %%%s",
+                                   Mtokstr_fmt(bin->left->as.lit), right_name));
+
+                // output of the expression
+                builder_add(sb, format("  %%%s =w copy %%%s", var_name,
+                                       right_name));
+                return;
+        }
+
+        const char *rc_str(left_name, format(".tmp.l%zu", next_reg++));
         codegen_expr(bin->left, sb, left_name);
-        const char *rc_str(right_name, format("r%zu", next_reg++));
+        const char *rc_str(right_name, format(".tmp.r%zu", next_reg++));
         codegen_expr(bin->right, sb, right_name);
 
         builder_add(sb,
@@ -148,10 +175,10 @@ char *codegen(Ast ast)
         builder_add(&sb, "export function w $main() {\n"
                          "@start");
 
-        builder_add(&sb, "  %t =w copy 0");
+        builder_add(&sb, "  %. =w copy 0");
         codegen_stmt(ast, &sb);
 
-        builder_add(&sb, "  ret %t");
+        builder_add(&sb, "  ret %.");
         builder_add(&sb, "}");
         builder_null(&sb);
 
