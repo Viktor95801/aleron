@@ -1,0 +1,5 @@
+{
+  "code": 0,
+  "stdout": "block{\n  expr{\n    i1}  expr{\n    i2}  expr{\n    i3}}\n",
+  "stderr": ""
+}
