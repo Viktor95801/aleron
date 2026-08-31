@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
+import difflib
 import json
 import os
 import stat
@@ -222,9 +223,34 @@ def handle_snapshot(args: argparse.Namespace) -> None:
         info = run_aleron(file, stage)
         with open(snap, "r") as f:
             snapshot: dict[str, int | str] = json.load(f)
-        assert info["code"] == snapshot["code"], f"Exit code mismatch on {file.name}"
-        assert info["stdout"] == snapshot["stdout"], f"stdout mismatch on {file.name}"
-        assert info["stderr"] == snapshot["stderr"], f"stderr mismatch on {file.name}"
+        if info["code"] != snapshot["code"]:
+            print(f"Exit code mismatch on {file.name}")
+            print(f"Expected {info['code']}, got {snapshot['code']}")
+            sys.exit(1)
+        if info["stdout"] != snapshot["stdout"]:
+            print(f"stdout mismatch on {file.name}")
+            diff = difflib.unified_diff(
+                str(info["stdout"]).splitlines(),
+                str(snapshot["stdout"]).splitlines(),
+                "expected",
+                "got",
+                lineterm="",
+            )
+            for line in diff:
+                print(line)
+            sys.exit(1)
+        if info["stderr"] != snapshot["stderr"]:
+            print(f"stderr mismatch on {file.name}")
+            diff = difflib.unified_diff(
+                str(info["stderr"]).splitlines(),
+                str(snapshot["stderr"]).splitlines(),
+                "expected",
+                "got",
+                lineterm="",
+            )
+            for line in diff:
+                print(line)
+            sys.exit(1)
 
     print(f"[{stage.value.upper()}] All snapshot tests passed successfully.")
 
