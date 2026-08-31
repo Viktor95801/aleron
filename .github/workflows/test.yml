@@ -24,6 +24,13 @@ jobs:
             #                  python -m pip install --upgrade pip
             #                  if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
+            - name: Install QBE
+              run: |
+                  git clone https://c3d.librews.org/qbe.git
+                  cd qbe
+                  make -j16
+                  sudo make install
+
             - name: Run test script
               run: |
                   python test.py all
