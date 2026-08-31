@@ -42,7 +42,7 @@ typedef struct {
 
 typedef struct {
         Token token;
-        char *error;
+        const char *error;
 } ScanResult;
 
 ScanResult next_token(char **src);

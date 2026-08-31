@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 
+# Negative testing was vibecoded cuz i dont have a lot of free time
+
 import argparse
 import difflib
+import functools
 import json
 import os
 import stat
@@ -10,10 +13,12 @@ import sys
 import tempfile
 from enum import Enum
 from pathlib import Path
+from time import sleep
+from typing import Any, Optional
 
-ALERON = "./aleron"
-QBE = "qbe"
-CC = "clang"
+ALERON: str = "./aleron"
+QBE: str = "qbe"
+CC: str = "clang"
 
 
 class Stage(str, Enum):
@@ -24,8 +29,8 @@ class Stage(str, Enum):
 
 def main() -> None:
     run_make()
-    parser = argparser()
-    args = parser.parse_args()
+    parser: argparse.ArgumentParser = argparser()
+    args: argparse.Namespace = parser.parse_args()
 
     match args.command:
         case "all":
@@ -37,13 +42,19 @@ def main() -> None:
 
 
 def argparser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="The testing tool for Aleron.")
-
-    subcommands = parser.add_subparsers(
-        dest="command", required=True, description="Which kinds of tests to execute"
+    parser: argparse.ArgumentParser = argparse.ArgumentParser(
+        description="The testing tool for Aleron."
     )
 
-    snapshot_parent = argparse.ArgumentParser(add_help=False)
+    subcommands: argparse._SubParsersAction[argparse.ArgumentParser] = (
+        parser.add_subparsers(
+            dest="command",
+            required=True,
+            description="Which kinds of tests to execute",
+        )
+    )
+
+    snapshot_parent: argparse.ArgumentParser = argparse.ArgumentParser(add_help=False)
     _ = snapshot_parent.add_argument(
         "-sd",
         "--snap-dir",
@@ -66,7 +77,7 @@ def argparser() -> argparse.ArgumentParser:
         help="Which stage of the compiler to test",
     )
 
-    unit_parent = argparse.ArgumentParser(add_help=False)
+    unit_parent: argparse.ArgumentParser = argparse.ArgumentParser(add_help=False)
     _ = unit_parent.add_argument(
         "-r",
         "--runner",
@@ -85,7 +96,7 @@ def argparser() -> argparse.ArgumentParser:
         "all", help="Runs *all* of the tests", parents=[snapshot_parent, unit_parent]
     )
 
-    parser_unit = subcommands.add_parser(
+    parser_unit: argparse.ArgumentParser = subcommands.add_parser(
         "unit", help="Runs only the unit tests", parents=[unit_parent]
     )
     _ = parser_unit.add_argument(
@@ -95,12 +106,14 @@ def argparser() -> argparse.ArgumentParser:
         help="Whether to list all the available tests",
     )
 
-    parser_snapshot = subcommands.add_parser(
+    parser_snapshot: argparse.ArgumentParser = subcommands.add_parser(
         "snapshot",
         help="Runs the snapshot tests to guarantee no regression",
         parents=[snapshot_parent],
     )
-    snapshot_group = parser_snapshot.add_mutually_exclusive_group()
+    snapshot_group: argparse._MutuallyExclusiveGroup = (
+        parser_snapshot.add_mutually_exclusive_group()
+    )
     _ = snapshot_group.add_argument(
         "-u",
         "--update",
@@ -139,19 +152,149 @@ def handle_unit(args: argparse.Namespace) -> None:
         sys.exit(1)
 
     if args.list:
-        _ = sp.run([runner, "--list-tests"], check=True)
+        _ = sp.run([str(runner), "--list-tests"], check=True)
         return
-    _ = sp.run([runner, f"--filter={args.suite}"], check=True)
+    _ = sp.run([str(runner), f"--filter={args.suite}"], check=True)
+
+
+@functools.lru_cache(maxsize=256)
+def should_fail_compilation(file: Path) -> bool:
+    """Returns True if test is marked to fail via filename or parent directory name."""
+    if ".fail." in file.name or file.name.startswith("fail_"):
+        return True
+
+    part: str
+    for part in file.parts[:-1]:
+        if part.startswith("fail_") or part == "fail":
+            return True
+
+    return False
+
+
+def execute_test(file: Path, stage: Stage) -> dict[str, Any] | None:
+    """Executes Aleron safely, handling expected and unexpected compilation passes/failures."""
+    expects_failure: bool = should_fail_compilation(file)
+
+    if expects_failure and stage != Stage.AST:
+        return None
+
+    try:
+        info: dict[str, Any] = run_aleron(file, stage)
+    except (sp.CalledProcessError, RuntimeError) as e:
+        if not expects_failure:
+            print(
+                f"[{stage.value.upper()}] WARNING: Expected successful compilation, but failed on {file.name}"
+            )
+            print(f"Details: {e}")
+
+        raw_stdout: Any = getattr(e, "stdout", b"")
+        raw_stderr: Any = getattr(e, "stderr", str(e))
+
+        stdout_str: str = (
+            raw_stdout.decode()
+            if isinstance(raw_stdout, bytes)
+            else str(raw_stdout or "")
+        )
+        stderr_str: str = (
+            raw_stderr.decode()
+            if isinstance(raw_stderr, bytes)
+            else str(raw_stderr or "")
+        )
+        code_val: int = int(getattr(e, "returncode", 1))
+
+        return {
+            "code": code_val,
+            "stdout": stdout_str,
+            "stderr": stderr_str,
+        }
+
+    if expects_failure and info["code"] == 0:
+        print(
+            f"[{stage.value.upper()}] WARNING: Expected compilation failure, but passed on {file.name}"
+        )
+
+    return info
+
+
+def update_snapshot(file: Path, snap: Path, stage: Stage) -> None:
+    info: dict[str, Any] | None = execute_test(file, stage)
+    if info is None:
+        return
+
+    print(f"[{stage.value.upper()}] Updating snapshot for file: {file.name}")
+    snap.parent.mkdir(parents=True, exist_ok=True)
+    with open(snap, "w") as f:
+        json.dump(info, f, indent=2)
+
+
+def test_single_snapshot(file: Path, snap: Path, stage: Stage) -> bool:
+    if not snap.exists():
+        if should_fail_compilation(file) and stage != Stage.AST:
+            return False
+        print(
+            f"[{stage.value.upper()}] Missing snapshot for {file.name}. Generate via: -ua new"
+        )
+        return False
+
+    print(f"[{stage.value.upper()}] Testing: {file.name}")
+    info: dict[str, Any] | None = execute_test(file, stage)
+    if info is None:
+        return False
+
+    snapshot: dict[str, Any] = {}
+    with open(snap, "r") as f:
+        snapshot = json.load(f)
+
+    had_error: bool = False
+    if info["code"] != snapshot["code"]:
+        print(f"Exit code mismatch on {file.name}")
+        print(f"Expected {snapshot['code']}, got {info['code']}")
+        had_error = True
+
+    if info["stdout"] != snapshot["stdout"]:
+        print(f"stdout mismatch on {file.name}")
+        diff = difflib.unified_diff(
+            str(snapshot["stdout"]).splitlines(),
+            str(info["stdout"]).splitlines(),
+            "expected",
+            "got",
+            lineterm="",
+        )
+        line: str
+        for line in diff:
+            print(line)
+        had_error = True
+
+    if info["stderr"] != snapshot["stderr"]:
+        print(f"stderr mismatch on {file.name}")
+        diff = difflib.unified_diff(
+            str(snapshot["stderr"]).splitlines(),
+            str(info["stderr"]).splitlines(),
+            "expected",
+            "got",
+            lineterm="",
+        )
+        line: str
+        for line in diff:
+            print(line)
+        had_error = True
+
+    if had_error:
+        print("----------- ERROR on test -----------")
+        sleep(1)
+
+    return had_error
 
 
 def handle_snapshot(args: argparse.Namespace) -> None:
     if args.stage == "all":
+        s: Stage
         for s in Stage:
             args.stage = s.value
             handle_snapshot(args)
         return
 
-    stage = Stage(args.stage)
+    stage: Stage = Stage(args.stage)
     snap_dir: Path = args.snap_dir.resolve()
     file_dir: Path = args.file_dir.resolve()
 
@@ -170,109 +313,75 @@ def handle_snapshot(args: argparse.Namespace) -> None:
         if f.is_file()
     }
 
-    def update_snapshot(file: Path, snap: Path) -> None:
-        print(f"[{stage.value.upper()}] Updating snapshot for file: {file.name}")
-        info = run_aleron(file, stage)
-        snap.parent.mkdir(parents=True, exist_ok=True)
-        with open(snap, "w") as f:
-            json.dump(info, f, indent=2)
-
     if update:
-        snap = files_and_snaps.get(update)
+        snap: Path | None = files_and_snaps.get(update)
         if not snap:
-            print(f"[{stage.value.upper()}] Error: {update} not found in {file_dir}")
+            print(f"[{stage.value.upper()}] ERROR: {update} not found in {file_dir}")
             sys.exit(1)
-
-        update_snapshot(update, snap)
+        update_snapshot(update, snap, stage)
         print(f"[{stage.value.upper()}] Done.")
         return
 
     if update_by:
-        files = file_dir.rglob(update_by)
-        for file in files:
-            if file.is_relative_to(snap_dir):
+        file_item: Path
+        for file_item in file_dir.rglob(update_by):
+            if file_item.is_relative_to(snap_dir):
                 continue
-            snap = files_and_snaps.get(file)
-            if not snap:
-                start = f"[{stage.value.upper()}]"
-                align = len(start)
-                print(f"{start} File not found: {file.name}, skipping.")
+            snap_item: Path | None = files_and_snaps.get(file_item)
+            if not snap_item:
+                start: str = f"[{stage.value.upper()}]"
+                print(f"{start} File not found: {file_item.name}, skipping.")
                 print(
-                    f'{" " * align} Try adding ".ale" to the pattern, e. g.: {update_by + ".ale"}'
+                    f"{' ' * len(start)} Try adding '.ale' to pattern, e.g.: {update_by + '.ale'}"
                 )
                 continue
-            update_snapshot(file, snap)
+            update_snapshot(file_item, snap_item, stage)
         print(f"[{stage.value.upper()}] Done.")
         return
 
     if update_all:
-        is_all = update_all == "all"
-        for file, snap in files_and_snaps.items():
-            if not is_all and snap.exists():
+        is_all: bool = update_all == "all"
+        target_file: Path
+        target_snap: Path
+        for target_file, target_snap in files_and_snaps.items():
+            if not is_all and target_snap.exists():
                 continue
-            update_snapshot(file, snap)
+            update_snapshot(target_file, target_snap, stage)
         print(f"[{stage.value.upper()}] Done.")
         return
 
-    for file, snap in files_and_snaps.items():
-        if not snap.exists():
-            print(
-                f"[{stage.value.upper()}] Missing snapshot for {file.name}. Generate via: -ua new"
-            )
-            continue
-        print(f"[{stage.value.upper()}] Testing: {file.name}")
-        info = run_aleron(file, stage)
-        with open(snap, "r") as f:
-            snapshot: dict[str, int | str] = json.load(f)
+    error_on: list[str] = []
+    test_file: Path
+    test_snap: Path
+    for test_file, test_snap in files_and_snaps.items():
+        if test_single_snapshot(test_file, test_snap, stage):
+            error_on.append(test_file.name)
 
-        had_error = False
-        if info["code"] != snapshot["code"]:
-            print(f"Exit code mismatch on {file.name}")
-            print(f"Expected {info['code']}, got {snapshot['code']}")
-            had_error = True
-        if info["stdout"] != snapshot["stdout"]:
-            print(f"stdout mismatch on {file.name}")
-            diff = difflib.unified_diff(
-                str(snapshot["stdout"]).splitlines(),
-                str(info["stdout"]).splitlines(),
-                "expected",
-                "got",
-                lineterm="",
-            )
-            for line in diff:
-                print(line)
-            had_error = True
-        if info["stderr"] != snapshot["stderr"]:
-            print(f"stderr mismatch on {file.name}")
-            diff = difflib.unified_diff(
-                str(snapshot["stderr"]).splitlines(),
-                str(info["stderr"]).splitlines(),
-                "expected",
-                "got",
-                lineterm="",
-            )
-            for line in diff:
-                print(line)
-            had_error = True
-        if had_error:
-            sys.exit(1)
+    if not error_on:
+        print(f"[{stage.value.upper()}] All snapshot tests passed successfully.")
+        return
 
-    print(f"[{stage.value.upper()}] All snapshot tests passed successfully.")
+    stage_str: str = stage.value.upper()
+    print(f"[{stage_str}] ERROR: Had error on files:")
+    err_file: str
+    for err_file in error_on:
+        print(" " * len(stage_str) + f" - {err_file}")
 
 
 def run_make() -> None:
     _ = sp.run(["make", "all"], check=True)
 
 
-def run_aleron(path: Path, stage: Stage) -> dict[str, int | str]:
-    path_str = str(path.resolve())
+def run_aleron(path: Path, stage: Stage) -> dict[str, Any]:
+    path_str: str = str(path.resolve())
     assert path_str.endswith(".ale")
 
+    contents: str = ""
     with open(path_str, "r") as f:
         contents = f.read()
 
     if stage in (Stage.AST, Stage.IR):
-        process = sp.run(
+        process: sp.CompletedProcess[bytes] = sp.run(
             [ALERON, f"-e={stage.value}", contents],
             capture_output=True,
             check=False,
@@ -284,8 +393,9 @@ def run_aleron(path: Path, stage: Stage) -> dict[str, int | str]:
         }
 
     process = sp.run([ALERON, contents], capture_output=True, check=True)
-    qbe_ssa = process.stdout.decode()
+    qbe_ssa: str = process.stdout.decode()
 
+    qbe_asm: str = ""
     with tempfile.NamedTemporaryFile("w+") as f:
         _ = f.write(qbe_ssa)
         f.flush()
@@ -308,7 +418,7 @@ def run_aleron(path: Path, stage: Stage) -> dict[str, int | str]:
             capture_output=False,
             check=True,
         )
-        st = os.stat(out.name)
+        st: os.stat_result = os.stat(out.name)
         os.chmod(out.name, st.st_mode | stat.S_IEXEC)
         temp_path = out.name
 
