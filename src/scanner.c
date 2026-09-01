@@ -5,6 +5,7 @@
 
 #include "crc.h"
 #include "util.h"
+#include "vendor/stb_ds.h"
 
 #define _isalpha(c) (isalpha(c) || (c) == '_')
 #define _isalnum(c) (isalnum(c) || (c) == '_')
@@ -38,6 +39,9 @@ const char *token_to_str(Token *token)
                 return ")";
         case TK_SEMI:
                 return ";";
+
+        case KW_RETURN:
+                return "kw:return";
         }
 }
 
@@ -48,8 +52,37 @@ char *scanner_next_char(char **src)
         return (*src)++;
 }
 
+KeywordHT keyword_ht = NULL;
+static bool init_scanner_mod = false;
+
 ScanResult next_token(char **src)
 {
+        if (!init_scanner_mod) {
+                TokenKind t = 0;
+                // here to get compiler warnings whenever i forget to update the
+                // keyword hashtable
+                switch (t) {
+                case TK_ADD:
+                case TK_EOF:
+                case TK_SEMI:
+                case TK_SUB:
+                case TK_ASS:
+                case TK_CPAREN:
+                case TK_DIV:
+                case TK_ID:
+                case TK_INT:
+                case TK_INVALID:
+                case TK_MUL:
+                case TK_OPAREN:
+
+                case KW_RETURN:
+                }
+
+                shdefault(keyword_ht, TK_EOF);
+
+                shput(keyword_ht, "return", KW_RETURN);
+                init_scanner_mod = true;
+        }
         while (isspace(**src)) {
                 scanner_next_char(src);
         }
@@ -68,9 +101,9 @@ ScanResult next_token(char **src)
                 };
                 if (invalid_number) {
                         result.token.kind = TK_INVALID;
-                        result.error = format("number contains letters: " SV_Fmt
-                                              "\n",
-                                              Mtokstr_fmt(result.token));
+                        result.error = strdup(
+                                format("number contains letters: " SV_Fmt "\n",
+                                       Mtokstr_fmt(result.token)));
                 }
                 return result;
         }
@@ -80,8 +113,19 @@ ScanResult next_token(char **src)
                 while (_isalnum(**src)) {
                         scanner_next_char(src);
                 }
-                return (ScanResult){ .token = { TK_ID,
-                                                { *src - start, start } } };
+
+                auto result = (ScanResult){
+                        .token = { TK_ID, { *src - start, start } }
+                };
+                const char *null_terminated =
+                        format(SV_Fmt, Mtokstr_fmt(result.token));
+                TokenKind kind = shget(keyword_ht, null_terminated);
+                // if its a keyword
+                if (kind != TK_EOF) {
+                        result.token.kind = kind;
+                }
+
+                return result;
         }
 
 #define singleCharCase(kind)                                     \

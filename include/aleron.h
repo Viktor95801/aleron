@@ -35,7 +35,16 @@ typedef enum {
         TK_CPAREN,
 
         TK_SEMI,
+
+        KW_RETURN,
 } TokenKind;
+
+typedef struct {
+        const char *key;
+        TokenKind value;
+} *KeywordHT;
+
+extern KeywordHT keyword_ht;
 
 typedef struct {
         TokenKind kind;
@@ -44,7 +53,7 @@ typedef struct {
 
 typedef struct {
         Token token;
-        const char *error;
+        char *error;
 } ScanResult;
 
 #define Mtokstr_fmt(tok) (int)(tok).str.count, (tok).str.data

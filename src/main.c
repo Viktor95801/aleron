@@ -1,8 +1,10 @@
 #include <stdio.h>
+#include <string.h>
 
 #include "aleron.h"
 #include "crc.h"
-#include <string.h>
+#include "vendor/stb_ds.h"
+#include <time.h>
 
 enum { STAGE_AST, STAGE_IR, STAGE_LEX };
 
@@ -12,6 +14,8 @@ int main(int argc, char *argv[])
                 printf("Usage: %s [-e={ast,ir,lex}] <input>\n", argv[0]);
                 exit(0);
         }
+
+        stbds_rand_seed(time(NULL));
 
         int file_id = 1;
         int stage = STAGE_IR;
@@ -42,6 +46,7 @@ COMPILE:
                         if (scan.error) {
                                 exit_code = 1;
                                 printf("ERROR: %s", scan.error);
+                                free(scan.error);
                         }
                 }
 

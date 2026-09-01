@@ -340,7 +340,8 @@ def snapshot_from(from_file: Path, file_dir: Path, snap_dir: Path):
         if tok == lexer.eof or tok == ";":
             print(f"ERROR: expected a binding path, got: {tok_to_str(tok)}")
             sys.exit(1)
-        from_path: Path = file_dir / Path(literal_eval(tok))
+
+        from_path: Path = file_dir / Path(tok.strip("\"'"))
         if not from_path.exists():
             print(f"ERROR: {from_path} not found in {file_dir}")
             sys.exit(1)
@@ -350,7 +351,7 @@ def snapshot_from(from_file: Path, file_dir: Path, snap_dir: Path):
             print(f"ERROR: expected an exit code, got: {tok_to_str(tok)}")
             sys.exit(1)
         try:
-            from_code: int = int(literal_eval(tok))
+            from_code: int = int(tok)
         except ValueError as e:
             print(f"ERROR: expected a valid integer: {e}")
             sys.exit(1)
