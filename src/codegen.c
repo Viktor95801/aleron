@@ -39,6 +39,7 @@ static void builder_destroy(char *sb)
 static u64 next_reg = 0;
 
 static void codegen_stmt(Node *node, char **sb);
+static void codegen_stmt_return(NodeStReturn *node, char **sb);
 static void codegen_stmt_block(NodeStBlock *node, char **sb);
 static void codegen_stmt_expr(NodeStExpr *node, char **sb);
 
@@ -51,14 +52,15 @@ static void codegen_stmt(Node *node, char **sb)
 {
         assert(node);
         switch (node->kind) {
-        case NKSt_EXPR: {
+        case NKSt_EXPR:
                 codegen_stmt_expr(&node->as.stexpr, sb);
                 return;
-        } break;
-        case NKSt_BLOCK: {
+        case NKSt_BLOCK:
                 codegen_stmt_block(&node->as.stblock, sb);
                 return;
-        } break;
+        case NKSt_RETURN:
+                codegen_stmt_return(&node->as.streturn, sb);
+                return;
 
         case NKEx_BINOP:
         case NKEx_LIT:
@@ -78,9 +80,17 @@ static void codegen_stmt_block(NodeStBlock *node, char **sb)
         }
 }
 
+static void codegen_stmt_return(NodeStReturn *node, char **sb)
+{
+        const char *rc_str(name, format(".tmp%zu", next_reg++));
+        codegen_expr(node->expr, sb, name);
+
+        builder_add(sb, format("  %%.ret =w copy %%%s", name));
+}
+
 static void codegen_stmt_expr(NodeStExpr *node, char **sb)
 {
-        codegen_expr(node->expr, sb, ".");
+        codegen_expr(node->expr, sb, ".sexpr");
 }
 
 static void codegen_expr_lit(NodeLit *lit, char **sb, const char *var_name)
@@ -106,7 +116,7 @@ static void codegen_expr_lit(NodeLit *lit, char **sb, const char *var_name)
 static void codegen_expr_unaop(NodeUnaop *una, char **sb, const char *var_name)
 {
         assert(una->kind == UNAOP_NEG);
-        const char *rc_str(name, format("tmp%zu", next_reg++));
+        const char *rc_str(name, format(".tmp%zu", next_reg++));
         codegen_expr(una->expr, sb, name);
 
         builder_add(sb, format("  %%%s =w mul %%%s, -1", var_name, name));
@@ -159,6 +169,7 @@ static void codegen_expr(Node *node, char **sb, const char *var_name)
         } break;
 
         case NK_BAD:
+        case NKSt_RETURN:
         case NKSt_BLOCK:
         case NKSt_EXPR:
         }
@@ -175,10 +186,10 @@ char *codegen(Ast ast)
         builder_add(&sb, "export function w $main() {\n"
                          "@start");
 
-        builder_add(&sb, "  %. =w copy 0");
+        builder_add(&sb, "  %.ret =w copy 0");
         codegen_stmt(ast, &sb);
 
-        builder_add(&sb, "  ret %.");
+        builder_add(&sb, "  ret %.ret");
         builder_add(&sb, "}");
         builder_null(&sb);
 

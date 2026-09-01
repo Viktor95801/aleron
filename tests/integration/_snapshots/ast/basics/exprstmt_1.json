@@ -1,5 +1,5 @@
 {
   "code": 0,
-  "stdout": "block{\n  expr{\n    1:int}  expr{\n    2:int}  expr{\n    3:int}}\n",
+  "stdout": "block{\n  expr{\n    1:int}  expr{\n    2:int}  return{\n    3:int}}\n",
   "stderr": ""
 }

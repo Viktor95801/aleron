@@ -20,6 +20,10 @@ void destroy_node(void *ptr)
                 }
                 arrfree(block.list);
         } break;
+        case NKSt_RETURN: {
+                NodeStReturn stret = node->as.streturn;
+                del(stret.expr);
+        } break;
         case NKSt_EXPR: {
                 NodeStExpr stexpr = node->as.stexpr;
                 del(stexpr.expr);
@@ -37,8 +41,8 @@ void destroy_node(void *ptr)
         case NKEx_LIT: {
         } break;
 
-        case NK_BAD:
-                break;
+        case NK_BAD: {
+        } break;
         }
 }
 
@@ -65,6 +69,15 @@ Node *new_stexpr(Node *expr)
         Node *result = new_node(NKSt_EXPR);
         NodeStExpr *stexpr = &result->as.stexpr;
         stexpr->expr = expr;
+
+        return result;
+}
+
+Node *new_streturn(Node *expr)
+{
+        Node *result = new_node(NKSt_RETURN);
+        NodeStReturn *stret = &result->as.streturn;
+        stret->expr = expr;
 
         return result;
 }
@@ -156,6 +169,18 @@ static void dump_stblock(NodeStBlock *node, FILE *file, u32 indent)
         fputs("}", file);
 }
 
+static void dump_streturn(NodeStReturn *node, FILE *file, u32 indent)
+{
+        assert(node);
+        assert(file);
+
+        fprintf(file, "return{\n");
+
+        dump_indent(file, indent);
+        dump_node(node->expr, file, indent + 1);
+        fputs("}", file);
+}
+
 static void dump_stexpr(NodeStExpr *node, FILE *file, u32 indent)
 {
         assert(node);
@@ -221,6 +246,9 @@ static void dump_node(Node *node, FILE *file, u32 indent)
         switch (node->kind) {
         case NKSt_BLOCK:
                 dump_stblock(&node->as.stblock, file, indent);
+                return;
+        case NKSt_RETURN:
+                dump_streturn(&node->as.streturn, file, indent);
                 return;
         case NKSt_EXPR:
                 dump_stexpr(&node->as.stexpr, file, indent);

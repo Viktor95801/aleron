@@ -1,5 +1,5 @@
 {
   "code": 0,
-  "stdout": "int:1\n;\nint:2\n;\nint:3\n;\n",
+  "stdout": "int:1\n;\nint:2\n;\nkw:return\nint:3\n;\n",
   "stderr": ""
 }

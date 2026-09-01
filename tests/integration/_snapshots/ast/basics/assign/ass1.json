@@ -1,0 +1,5 @@
+{
+  "code": 0,
+  "stdout": "block{\n  expr{\n    binary(ass,\n      a:id,\n      3:int)}  return{\n    a:id}}\n",
+  "stderr": ""
+}

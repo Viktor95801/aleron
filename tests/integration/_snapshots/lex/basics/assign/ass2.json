@@ -1,0 +1,5 @@
+{
+  "code": 0,
+  "stdout": "ident:a\n=\nint:3\n;\nident:z\n=\nint:5\n;\nkw:return\nident:a\n+\nident:z\n;\n",
+  "stderr": ""
+}

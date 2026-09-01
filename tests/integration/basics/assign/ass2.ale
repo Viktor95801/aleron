@@ -1,1 +1,1 @@
-a=3; z=5; a+z;
+a=3; z=5; return a+z;

@@ -1,5 +1,5 @@
 {
   "code": 0,
-  "stdout": "int:2\n*\nint:3\n/\nint:2\n;\n",
+  "stdout": "kw:return\nint:2\n*\nint:3\n/\nint:2\n;\n",
   "stderr": ""
 }

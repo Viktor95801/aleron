@@ -45,7 +45,7 @@ static bool consume(Parser *p, TokenKind kind)
 static void expect(Parser *p, TokenKind kind, const char *what)
 {
         if (!consume(p, kind)) {
-                error_at(p->src, p->ctok.str.data, "expected %s", what);
+                error_at(p->src, p->ctok.str.data, "expected: %s", what);
         }
 }
 
@@ -58,6 +58,7 @@ static Node *eprimary(Parser *p);
 
 static Node *sstmt(Parser *p);
 static Node *sexpr(Parser *p);
+static Node *sreturn(Parser *p);
 // static Node *sblock(Parser *p);
 
 Ast parse(const char *source)
@@ -77,10 +78,12 @@ Ast parse(const char *source)
 
 static Node *sstmt(Parser *p)
 {
-        // ignore empty statements
-        if (consume(p, TK_SEMI)) {
-                return sstmt(p);
+        switch (p->ctok.kind) {
+        case KW_RETURN:
+                return sreturn(p);
+        default:
         }
+
         return sexpr(p);
 }
 
@@ -91,6 +94,15 @@ static Node *sexpr(Parser *p)
         expect(p, TK_SEMI, ";");
 
         return se;
+}
+
+static Node *sreturn(Parser *p)
+{
+        consume(p, KW_RETURN);
+        Node *e = expr(p);
+        expect(p, TK_SEMI, ";");
+
+        return new_streturn(e);
 }
 
 static Node *expr(Parser *p)
