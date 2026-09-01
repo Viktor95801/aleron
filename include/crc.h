@@ -211,8 +211,6 @@ CRC_DECL char *CRC__NONNULL crc_from_cstr(const char *CRC__NONNULL cstr);
 // internal
 CRC_DECL void crc__cleanup(void *CRC__NONNULL ptr);
 
-#endif // CRefCount_H
-
 #ifndef CRC_LONG_NAMES
 #define scoping(...) CRC_scoping(__VA_ARGS__)
 #define rca(name) CRC_rca(name)
@@ -242,7 +240,9 @@ static inline char *CRC__NONNULL from_cstr(const char *CRC__NONNULL cstr)
 {
         return crc_from_cstr(cstr);
 }
-#endif
+#endif // CRC_LONG_NAMES
+
+#endif // CRefCount_H
 
 #ifdef CRC_IMPLEMENTATION
 CRC_DECL void *CRC__NONNULL crc_new(size_t size)

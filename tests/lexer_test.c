@@ -2,6 +2,8 @@
 #include "util.h"
 #include "vendor/utest.h"
 
+#include "scanner.c"
+
 struct {
         char *name, *it;
         TokenKind wants[32];
@@ -14,7 +16,8 @@ struct {
           { TK_INT, TK_SUB, TK_INT, TK_ADD, TK_INT, TK_EOF } },
         { "Grouping",
           " (21-2)",
-          { TK_OPAREN, TK_INT, TK_SUB, TK_INT, TK_CPAREN } },
+          { TK_OPAREN, TK_INT, TK_SUB, TK_INT, TK_CPAREN, TK_EOF } },
+        { "Return", "return;", { KW_RETURN, TK_SEMI } }
 };
 const i32 lexer_test_amount =
         sizeof(lexer_test_cases) / sizeof(*lexer_test_cases);

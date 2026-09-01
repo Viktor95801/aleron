@@ -3,6 +3,7 @@
 -Wextra
 -std=c23
 -Iinclude
+-Isrc
 -g
 -fsanitize=address,undefined,leak
 -O1

@@ -11,15 +11,12 @@ TEST_BUILD_DIR := $(BUILD_DIR)/tests
 TARGET      := aleron
 TEST_TARGET := $(TEST_DIR)/test_runner
 
-# Collect all sources under src/
+# Collect all sources
 ALL_SRCS := $(wildcard $(SRC_DIR)/*.c)
-# Exclude main.c for unit test inclusion
-LIB_SRCS  := $(filter-out $(SRC_DIR)/main.c, $(ALL_SRCS))
 TEST_SRCS := $(wildcard $(TEST_DIR)/*.c)
 
 # Object file listings
 APP_OBJS  := $(patsubst $(SRC_DIR)/%.c, $(BUILD_DIR)/%.o, $(ALL_SRCS))
-LIB_OBJS  := $(patsubst $(SRC_DIR)/%.c, $(BUILD_DIR)/%.o, $(LIB_SRCS))
 TEST_OBJS := $(patsubst $(TEST_DIR)/%.c, $(TEST_BUILD_DIR)/%.o, $(TEST_SRCS))
 
 .PHONY: all test run clean
@@ -36,11 +33,11 @@ $(BUILD_DIR)/%.o: $(SRC_DIR)/%.c | $(BUILD_DIR)
 # Unit Test Build
 test: $(TEST_TARGET)
 
-$(TEST_TARGET): $(LIB_OBJS) $(TEST_OBJS)
-	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+$(TEST_TARGET): $(TEST_OBJS)
+	$(CC) -Isrc $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 $(TEST_BUILD_DIR)/%.o: $(TEST_DIR)/%.c | $(TEST_BUILD_DIR)
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(CC) -Isrc $(CFLAGS) -c $< -o $@
 
 # Directory Creation
 $(BUILD_DIR) $(TEST_BUILD_DIR):

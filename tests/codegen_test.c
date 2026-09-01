@@ -1,12 +1,13 @@
 #include <assert.h>
 
 #include "aleron.h"
-#include "crc.h"
 #include "util.h"
 #include "vendor/stb_ds.h"
 #include "vendor/utest.h"
 #include <stdio.h>
 #include <string.h>
+
+#include "codegen.c"
 
 /*
 UTEST(codegen, string_builder)
