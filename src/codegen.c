@@ -62,6 +62,7 @@ static void codegen_stmt(Node *node, char **sb)
                 codegen_stmt_return(&node->as.streturn, sb);
                 return;
 
+        case NKSt_IF:
         case NKEx_BINOP:
         case NKEx_LIT:
         case NKEx_UNAOP:
@@ -170,6 +171,7 @@ static void codegen_expr(Node *node, char **sb, const char *var_name)
 
         case NK_BAD:
         case NKSt_RETURN:
+        case NKSt_IF:
         case NKSt_BLOCK:
         case NKSt_EXPR:
         }

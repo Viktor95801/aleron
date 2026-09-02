@@ -1,7 +1,6 @@
 https://github.com/rui314/chibicc/commits/main?after=90d1f7f199cc55b13c7fdb5839d1409806633fdb+279
+implement a semantic analyser. relying on qbe's error messages for when the parser messes semantics up is not great design
 continue implementing
 add fileset and better errors
-refactor parser and lexer
 refactor codegen
-refactor unit testing: test only the small functions and the static functions from each module instead of entire pipelines like before (that's for snapshot testing)
-make a rule 110 example - experimenting syntax
+write unit tests

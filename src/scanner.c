@@ -47,6 +47,8 @@ const char *token_to_str(Token *token)
 
         case KW_RETURN:
                 return "kw:return";
+        case KW_IF:
+                return "kw:if";
         }
 }
 
@@ -83,11 +85,13 @@ ScanResult next_token(char **src)
                 case TK_OCURLY:
 
                 case KW_RETURN:
+                case KW_IF:
                 }
 
                 shdefault(keyword_ht, TK_EOF);
 
                 shput(keyword_ht, "return", KW_RETURN);
+                shput(keyword_ht, "if", KW_IF);
                 init_scanner_mod = true;
         }
         while (isspace(**src)) {

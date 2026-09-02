@@ -24,6 +24,14 @@ void destroy_node(void *ptr)
                 NodeStReturn stret = node->as.streturn;
                 del(stret.expr);
         } break;
+        case NKSt_IF: {
+                NodeStIf stif = node->as.stif;
+                del(stif.block);
+                del(stif.cond);
+                if (stif.ifnot) {
+                        del(stif.ifnot);
+                }
+        } break;
         case NKSt_EXPR: {
                 NodeStExpr stexpr = node->as.stexpr;
                 del(stexpr.expr);
@@ -60,6 +68,17 @@ Node *new_stblock(Node **list)
         Node *result = new_node(NKSt_BLOCK);
         NodeStBlock *block = &result->as.stblock;
         block->list = list;
+
+        return result;
+}
+
+Node *new_stif(Node *cond, Node *block, Node *ifnot)
+{
+        Node *result = new_node(NKSt_IF);
+        NodeStIf *stif = &result->as.stif;
+        stif->block = block;
+        stif->cond = cond;
+        stif->ifnot = ifnot;
 
         return result;
 }
@@ -166,7 +185,8 @@ static void dump_stblock(NodeStBlock *node, FILE *file, u32 indent)
                 dump_node(node->list[i], file, indent + 1);
         }
 
-        fputs("}", file);
+        dump_indent(file, indent - 1);
+        fputs("}\n", file);
 }
 
 static void dump_streturn(NodeStReturn *node, FILE *file, u32 indent)
@@ -178,7 +198,26 @@ static void dump_streturn(NodeStReturn *node, FILE *file, u32 indent)
 
         dump_indent(file, indent);
         dump_node(node->expr, file, indent + 1);
-        fputs("}", file);
+
+        dump_indent(file, indent - 1);
+        fputs("}\n", file);
+}
+
+static void dump_stif(NodeStIf *node, FILE *file, u32 indent)
+{
+        assert(node);
+        assert(file);
+
+        fprintf(file, "if(");
+        dump_node(node->cond, file, indent);
+
+        fprintf(file, ") ");
+        dump_node(node->block, file, indent + 1);
+
+        if (node->ifnot) {
+                fprintf(file, " else \n");
+                dump_node(node->ifnot, file, indent + 1);
+        }
 }
 
 static void dump_stexpr(NodeStExpr *node, FILE *file, u32 indent)
@@ -190,7 +229,9 @@ static void dump_stexpr(NodeStExpr *node, FILE *file, u32 indent)
 
         dump_indent(file, indent);
         dump_node(node->expr, file, indent + 1);
-        fputs("}", file);
+
+        dump_indent(file, indent - 1);
+        fputs("}\n", file);
 }
 
 static void dump_literal(NodeLit *node, FILE *file)
@@ -218,7 +259,9 @@ static void dump_unaop(NodeUnaop *node, FILE *file, u32 indent)
 
         dump_indent(file, indent);
         dump_node(node->expr, file, indent + 1);
-        fputs(")", file);
+
+        dump_indent(file, indent - 1);
+        fputs("\n)\n", file);
 }
 
 static void dump_binop(NodeBinop *node, FILE *file, u32 indent)
@@ -235,7 +278,7 @@ static void dump_binop(NodeBinop *node, FILE *file, u32 indent)
         dump_indent(file, indent);
         dump_node(node->right, file, indent + 1);
 
-        fputs(")", file);
+        fputs(")\n", file);
 }
 
 static void dump_node(Node *node, FILE *file, u32 indent)
@@ -249,6 +292,9 @@ static void dump_node(Node *node, FILE *file, u32 indent)
                 return;
         case NKSt_RETURN:
                 dump_streturn(&node->as.streturn, file, indent);
+                return;
+        case NKSt_IF:
+                dump_stif(&node->as.stif, file, indent);
                 return;
         case NKSt_EXPR:
                 dump_stexpr(&node->as.stexpr, file, indent);

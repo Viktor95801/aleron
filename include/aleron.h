@@ -39,6 +39,7 @@ typedef enum {
         TK_SEMI,
 
         KW_RETURN,
+        KW_IF,
 } TokenKind;
 
 typedef struct {
@@ -77,6 +78,7 @@ typedef enum {
 
         NKSt_RETURN,
         NKSt_BLOCK,
+        NKSt_IF,
         NKSt_EXPR,
 } NodeKind;
 
@@ -119,6 +121,12 @@ typedef struct {
 } NodeStBlock;
 
 typedef struct {
+        Node *cond;
+        Node *block;
+        Node *ifnot; // cant use 'else' :sob:
+} NodeStIf;
+
+typedef struct {
         Node *expr;
 } NodeStExpr;
 
@@ -131,6 +139,7 @@ struct Node {
 
                 NodeStReturn streturn;
                 NodeStBlock stblock;
+                NodeStIf stif;
                 NodeStExpr stexpr;
         } as;
 };
@@ -140,6 +149,7 @@ typedef Node *Ast;
 void destroy_node(void *ptr);
 Node *new_streturn(Node *expr);
 Node *new_stblock(Node **list);
+Node *new_stif(Node *cond, Node *block, Node *ifnot);
 Node *new_stexpr(Node *expr);
 
 Node *new_node(NodeKind kind);

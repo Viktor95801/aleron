@@ -64,6 +64,7 @@ static Node *eprimary(Parser *p);
 static Node *sstmt(Parser *p);
 static Node *sblock(Parser *p);
 static Node *sexpr(Parser *p);
+static Node *sif(Parser *p);
 static Node *sreturn(Parser *p);
 
 Ast parse(const char *source)
@@ -83,6 +84,8 @@ Ast parse(const char *source)
 static Node *sstmt(Parser *p)
 {
         switch (p->ctok.kind) {
+        case KW_IF:
+                return sif(p);
         case KW_RETURN:
                 return sreturn(p);
 
@@ -120,6 +123,16 @@ static Node *sexpr(Parser *p)
         expect(p, TK_SEMI, ";");
 
         return se;
+}
+
+static Node *sif(Parser *p)
+{
+        expect(p, KW_IF, "if");
+
+        Node *cond = expr(p);
+        Node *block = sblock(p);
+
+        return new_stif(cond, block, NULL);
 }
 
 static Node *sreturn(Parser *p)

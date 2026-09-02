@@ -1,5 +1,5 @@
 {
   "code": 0,
-  "stdout": "block{\n  return{\n    0:int}}\n",
+  "stdout": "block{\n  return{\n    0:int  }\n}\n\n",
   "stderr": ""
 }
