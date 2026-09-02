@@ -37,6 +37,11 @@ const char *token_to_str(Token *token)
                 return "(";
         case TK_CPAREN:
                 return ")";
+        case TK_OCURLY:
+                return "{";
+        case TK_CCURLY:
+                return "}";
+
         case TK_SEMI:
                 return ";";
 
@@ -74,6 +79,8 @@ ScanResult next_token(char **src)
                 case TK_INVALID:
                 case TK_MUL:
                 case TK_OPAREN:
+                case TK_CCURLY:
+                case TK_OCURLY:
 
                 case KW_RETURN:
                 }
@@ -151,6 +158,10 @@ ScanResult next_token(char **src)
                 singleCharCase(TK_OPAREN);
         case ')':
                 singleCharCase(TK_CPAREN);
+        case '{':
+                singleCharCase(TK_OCURLY);
+        case '}':
+                singleCharCase(TK_CCURLY);
 
         case ';':
                 singleCharCase(TK_SEMI);

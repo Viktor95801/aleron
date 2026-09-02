@@ -33,6 +33,8 @@ typedef enum {
 
         TK_OPAREN,
         TK_CPAREN,
+        TK_OCURLY,
+        TK_CCURLY,
 
         TK_SEMI,
 

@@ -49,6 +49,11 @@ static void expect(Parser *p, TokenKind kind, const char *what)
         }
 }
 
+static void unclosed(Parser *p, const char *start, const char *what)
+{
+        error_at(p->src, start, "unclosed: %s", what);
+}
+
 static Node *expr(Parser *p);
 static Node *eass(Parser *p);
 static Node *eadd(Parser *p);
@@ -57,23 +62,18 @@ static Node *eunary(Parser *p);
 static Node *eprimary(Parser *p);
 
 static Node *sstmt(Parser *p);
+static Node *sblock(Parser *p);
 static Node *sexpr(Parser *p);
 static Node *sreturn(Parser *p);
-// static Node *sblock(Parser *p);
 
 Ast parse(const char *source)
 {
         Parser p = {};
         init_parser(&p, source);
+        Node *stmt = sstmt(&p);
 
-        Node **list = NULL;
-        while (p.ctok.kind != TK_EOF) {
-                Node *st = sstmt(&p);
-                arrpush(list, st);
-        }
-        Ast ast = new_stblock(list);
-
-        return ast;
+        expect(&p, TK_EOF, "eof");
+        return stmt;
 }
 
 static Node *sstmt(Parser *p)
@@ -81,10 +81,32 @@ static Node *sstmt(Parser *p)
         switch (p->ctok.kind) {
         case KW_RETURN:
                 return sreturn(p);
+
+        case TK_OCURLY:
+                return sblock(p);
         default:
         }
 
         return sexpr(p);
+}
+
+static Node *sblock(Parser *p)
+{
+        expect(p, TK_OCURLY, "{");
+        const char *start = p->ptok.str.data;
+
+        Node **list = NULL;
+
+        while (p->ctok.kind != TK_CCURLY && p->ctok.kind != TK_EOF) {
+                Node *st = sstmt(p);
+                arrpush(list, st);
+        }
+        if (!consume(p, TK_CCURLY)) {
+                unclosed(p, start, "{");
+        }
+        Node *block = new_stblock(list);
+
+        return block;
 }
 
 static Node *sexpr(Parser *p)
@@ -98,7 +120,7 @@ static Node *sexpr(Parser *p)
 
 static Node *sreturn(Parser *p)
 {
-        consume(p, KW_RETURN);
+        expect(p, KW_RETURN, "return");
         Node *e = expr(p);
         expect(p, TK_SEMI, ";");
 
@@ -176,7 +198,9 @@ static Node *eunary(Parser *p)
 static Node *eprimary(Parser *p)
 {
         if (consume(p, TK_OPAREN)) {
+                const char *start = p->ptok.str.data;
                 Node *node = expr(p);
+                unclosed(p, start, "(");
                 expect(p, TK_CPAREN, "')'");
                 return node;
         }
