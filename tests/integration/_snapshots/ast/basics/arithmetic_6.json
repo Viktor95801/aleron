@@ -1,5 +1,5 @@
 {
   "code": 0,
-  "stdout": "block{\n  return{\n    binary(mul,\n      5:int,\n      binary(sub,\n        9:int,\n        6:int)\n)\n  }\n}\n\n",
+  "stdout": "block{return{binary(mul,5:int,binary(sub,9:int,6:int))}}\n",
   "stderr": ""
 }

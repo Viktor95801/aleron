@@ -1,5 +1,5 @@
 {
   "code": 0,
-  "stdout": "block{\n  return{\n    unary(neg,\n      unary(neg,\n        10:int      \n)\n    \n)\n  }\n}\n\n",
+  "stdout": "block{return{unary(neg,unary(neg,10:int))}}\n",
   "stderr": ""
 }

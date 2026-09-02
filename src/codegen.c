@@ -118,7 +118,7 @@ static void codegen_expr_lit(NodeLit *lit, char **sb, const char *var_name)
                 // TODO: make sure dierct register assignings are as functional
                 // as stack alloc4, loadw and storew
         case LK_ID:
-                builder_add(sb, format("  %%%s =w copy %%.var." SV_Fmt,
+                builder_add(sb, format("  %%%s =w loadw %%.var." SV_Fmt,
                                        var_name, Mtokstr_fmt(*lit)));
                 break;
         case LK_INT:
@@ -144,8 +144,11 @@ static void codegen_expr_binop(NodeBinop *bin, char **sb, const char *var_name)
                                    format(".tmp.ass%zu", next_reg++));
                 codegen_expr(bin->right, sb, right_name);
                 builder_add(sb, // declare local var
-                            format("  %%.var." SV_Fmt " =w copy %%%s",
-                                   Mtokstr_fmt(bin->left->as.lit), right_name));
+                            format("  %%.var." SV_Fmt " =l alloc4 1",
+                                   Mtokstr_fmt(bin->left->as.lit)));
+                builder_add(sb, // assign
+                            format("  storew %%%s, %%.var." SV_Fmt, right_name,
+                                   Mtokstr_fmt(bin->left->as.lit)));
 
                 // output of the expression
                 builder_add(sb, format("  %%%s =w copy %%%s", var_name,
