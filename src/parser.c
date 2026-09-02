@@ -70,10 +70,14 @@ Ast parse(const char *source)
 {
         Parser p = {};
         init_parser(&p, source);
-        Node *stmt = sstmt(&p);
+
+        if (consume(&p, TK_EOF)) {
+                error("Empty file provided. Try looking into our TODO: docs lol");
+        }
+        Node *st = sstmt(&p);
 
         expect(&p, TK_EOF, "eof");
-        return stmt;
+        return st;
 }
 
 static Node *sstmt(Parser *p)

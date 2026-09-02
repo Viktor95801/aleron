@@ -1,5 +1,5 @@
 {
   "code": 0,
-  "stdout": "kw:return\n-\nint:10\n+\nint:20\n;\n",
+  "stdout": "{\nkw:return\n-\nint:10\n+\nint:20\n;\n}\n",
   "stderr": ""
 }
