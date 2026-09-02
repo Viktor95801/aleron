@@ -200,8 +200,9 @@ static Node *eprimary(Parser *p)
         if (consume(p, TK_OPAREN)) {
                 const char *start = p->ptok.str.data;
                 Node *node = expr(p);
-                unclosed(p, start, "(");
-                expect(p, TK_CPAREN, "')'");
+                if (!consume(p, TK_CPAREN)) {
+                        unclosed(p, start, "(");
+                }
                 return node;
         }
 
