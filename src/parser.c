@@ -131,8 +131,12 @@ static Node *sif(Parser *p)
 
         Node *cond = expr(p);
         Node *block = sblock(p);
+        Node *ifnot = NULL;
+        if (consume(p, KW_ELSE)) {
+                ifnot = sblock(p);
+        }
 
-        return new_stif(cond, block, NULL);
+        return new_stif(cond, block, ifnot);
 }
 
 static Node *sreturn(Parser *p)

@@ -40,6 +40,7 @@ typedef enum {
 
         KW_RETURN,
         KW_IF,
+        KW_ELSE,
 } TokenKind;
 
 typedef struct {

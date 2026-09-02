@@ -3,6 +3,8 @@
 #include "util.h"
 #include "vendor/stb_ds.h"
 #include <assert.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 // add raw
 /* static void builder_addr(char **sb, const char *str)
@@ -41,6 +43,7 @@ static u64 next_reg = 0;
 static void codegen_stmt(Node *node, char **sb);
 static void codegen_stmt_return(NodeStReturn *node, char **sb);
 static void codegen_stmt_block(NodeStBlock *node, char **sb);
+static void codegen_stmt_if(NodeStIf *node, char **sb);
 static void codegen_stmt_expr(NodeStExpr *node, char **sb);
 
 static void codegen_expr(Ast ast, char **sb, const char *var_name);
@@ -61,8 +64,10 @@ static void codegen_stmt(Node *node, char **sb)
         case NKSt_RETURN:
                 codegen_stmt_return(&node->as.streturn, sb);
                 return;
-
         case NKSt_IF:
+                codegen_stmt_if(&node->as.stif, sb);
+                return;
+
         case NKEx_BINOP:
         case NKEx_LIT:
         case NKEx_UNAOP:
@@ -87,6 +92,15 @@ static void codegen_stmt_return(NodeStReturn *node, char **sb)
         codegen_expr(node->expr, sb, name);
 
         builder_add(sb, format("  %%.ret =w copy %%%s", name));
+}
+
+static void codegen_stmt_if(NodeStIf *node, char **sb)
+{
+        const char *rc_str(cond, format(".if%zu", next_reg++));
+        codegen_expr(node->cond, sb, cond);
+
+        fputs("TODO", stderr);
+        exit(1);
 }
 
 static void codegen_stmt_expr(NodeStExpr *node, char **sb)

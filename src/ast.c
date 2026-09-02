@@ -139,6 +139,7 @@ Node *new_unary(UnaopKind kind, Node *inside)
 
 static inline void dump_indent(FILE *file, u32 indent)
 {
+        return;
         for (i32 i = indent; i >= 0; --i) {
                 fputs("  ", file);
         }
@@ -178,7 +179,7 @@ static void dump_stblock(NodeStBlock *node, FILE *file, u32 indent)
         assert(node);
         assert(file);
 
-        fprintf(file, "block{\n");
+        fprintf(file, "block{");
 
         for (int i = 0; i < arrlen(node->list); ++i) {
                 dump_indent(file, indent);
@@ -186,7 +187,7 @@ static void dump_stblock(NodeStBlock *node, FILE *file, u32 indent)
         }
 
         dump_indent(file, indent - 1);
-        fputs("}\n", file);
+        fputs("}", file);
 }
 
 static void dump_streturn(NodeStReturn *node, FILE *file, u32 indent)
@@ -194,13 +195,13 @@ static void dump_streturn(NodeStReturn *node, FILE *file, u32 indent)
         assert(node);
         assert(file);
 
-        fprintf(file, "return{\n");
+        fprintf(file, "return{");
 
         dump_indent(file, indent);
         dump_node(node->expr, file, indent + 1);
 
         dump_indent(file, indent - 1);
-        fputs("}\n", file);
+        fputs("}", file);
 }
 
 static void dump_stif(NodeStIf *node, FILE *file, u32 indent)
@@ -215,7 +216,7 @@ static void dump_stif(NodeStIf *node, FILE *file, u32 indent)
         dump_node(node->block, file, indent + 1);
 
         if (node->ifnot) {
-                fprintf(file, " else \n");
+                fprintf(file, " else ");
                 dump_node(node->ifnot, file, indent + 1);
         }
 }
@@ -225,13 +226,13 @@ static void dump_stexpr(NodeStExpr *node, FILE *file, u32 indent)
         assert(node);
         assert(file);
 
-        fprintf(file, "expr{\n");
+        fprintf(file, "expr{");
 
         dump_indent(file, indent);
         dump_node(node->expr, file, indent + 1);
 
         dump_indent(file, indent - 1);
-        fputs("}\n", file);
+        fputs("}", file);
 }
 
 static void dump_literal(NodeLit *node, FILE *file)
@@ -255,13 +256,13 @@ static void dump_unaop(NodeUnaop *node, FILE *file, u32 indent)
         assert(node);
         assert(file);
 
-        fprintf(file, "unary(%s,\n", unaopk_to_str(node->kind));
+        fprintf(file, "unary(%s,", unaopk_to_str(node->kind));
 
         dump_indent(file, indent);
         dump_node(node->expr, file, indent + 1);
 
         dump_indent(file, indent - 1);
-        fputs("\n)\n", file);
+        fputs(")", file);
 }
 
 static void dump_binop(NodeBinop *node, FILE *file, u32 indent)
@@ -269,16 +270,16 @@ static void dump_binop(NodeBinop *node, FILE *file, u32 indent)
         assert(node);
         assert(file);
 
-        fprintf(file, "binary(%s,\n", binopk_to_str(node->kind));
+        fprintf(file, "binary(%s,", binopk_to_str(node->kind));
 
         dump_indent(file, indent);
         dump_node(node->left, file, indent + 1);
-        fputs(",\n", file);
+        fputs(",", file);
 
         dump_indent(file, indent);
         dump_node(node->right, file, indent + 1);
 
-        fputs(")\n", file);
+        fputs(")", file);
 }
 
 static void dump_node(Node *node, FILE *file, u32 indent)
