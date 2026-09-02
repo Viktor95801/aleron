@@ -116,7 +116,7 @@ static void codegen_expr_lit(NodeLit *lit, char **sb, const char *var_name)
 static void codegen_expr_unaop(NodeUnaop *una, char **sb, const char *var_name)
 {
         assert(una->kind == UNAOP_NEG);
-        const char *rc_str(name, format(".tmp%zu", next_reg++));
+        const char *rc_str(name, format(".tmp.una%zu", next_reg++));
         codegen_expr(una->expr, sb, name);
 
         builder_add(sb, format("  %%%s =w mul %%%s, -1", var_name, name));
