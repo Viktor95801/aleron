@@ -2,7 +2,9 @@
 #include "crc.h"
 #include "util.h"
 #include "vendor/stb_ds.h"
+#include <__stdarg_va_list.h>
 #include <assert.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -17,14 +19,23 @@
 }
  */
 
-static void builder_add(char **sb, const char *str)
+__attribute__((format(printf, 2, 3))) static void
+builder_add(char **sb, const char *fmt, ...)
 {
-        assert(str);
+        assert(fmt);
 
-        size_t len = strlen(str);
-        i32 where = arraddnindex(*sb, len);
-        memcpy(*sb + where, str, len);
+        va_list arg;
+
+        va_start(arg, fmt);
+
+        const char *result = formatv(fmt, arg);
+        size_t len = strlen(result);
+        char *where = arraddnptr(*sb, len);
+
+        memcpy(where, result, len);
         arrpush(*sb, '\n');
+
+        va_end(arg);
 }
 
 static void builder_null(char **sb)
@@ -105,8 +116,8 @@ static void codegen_stmt_return(NodeStReturn *node, char **sb)
         const char *rc_str(name, format(".tmp%zu", next_reg++));
         codegen_expr(node->expr, sb, name);
 
-        builder_add(sb, format("  %%.ret =w copy %%%s", name));
-        builder_add(sb, format("  jmp @.ret"));
+        builder_add(sb, "  %%.ret =w copy %%%s", name);
+        builder_add(sb, "  jmp @.ret");
 }
 
 static void codegen_stmt_if(NodeStIf *node, char **sb)
@@ -116,24 +127,23 @@ static void codegen_stmt_if(NodeStIf *node, char **sb)
         codegen_expr(node->cond, sb, cond);
 
         size_t if_num = next_reg++;
-        builder_add(sb, format("  jnz %%%s, @.if%zu, @.else%zu", cond, if_num,
-                               if_num));
+        builder_add(sb, "  jnz %%%s, @.if%zu, @.else%zu", cond, if_num, if_num);
 
-        builder_add(sb, format("@.if%zu", if_num));
+        builder_add(sb, "@.if%zu", if_num);
         bool terminated = codegen_stmt(node->block, sb);
         if (!terminated) {
-                builder_add(sb, format("  jmp @.endif%zu", if_num));
+                builder_add(sb, "  jmp @.endif%zu", if_num);
         }
 
-        builder_add(sb, format("@.else%zu", if_num));
+        builder_add(sb, "@.else%zu", if_num);
         if (node->ifnot) {
                 terminated = codegen_stmt(node->ifnot, sb);
         }
         if (!terminated) {
-                builder_add(sb, format("  jmp @.endif%zu", if_num));
+                builder_add(sb, "  jmp @.endif%zu", if_num);
         }
 
-        builder_add(sb, format("@.endif%zu", if_num));
+        builder_add(sb, "@.endif%zu", if_num);
 }
 
 static void codegen_stmt_for(NodeStFor *node, char **sb)
@@ -144,20 +154,20 @@ static void codegen_stmt_for(NodeStFor *node, char **sb)
 static void codegen_stmt_fwhile(NodeStForWhile *node, char **sb)
 {
         size_t while_num = next_reg++;
-        builder_add(sb, format("\n@.check%zu", while_num));
+        builder_add(sb, "\n@.check%zu", while_num);
         const char *rc_str(cond, format(".cond%zu", next_reg++));
         codegen_expr(node->cond, sb, cond);
 
-        builder_add(sb, format("  jnz %%%s, @.loop%zu, @.endloop%zu", cond,
-                               while_num, while_num));
+        builder_add(sb, "  jnz %%%s, @.loop%zu, @.endloop%zu", cond, while_num,
+                    while_num);
 
-        builder_add(sb, format("@.loop%zu", while_num));
+        builder_add(sb, "@.loop%zu", while_num);
         bool terminated = codegen_stmt(node->block, sb);
         if (!terminated) {
-                builder_add(sb, format("  jmp @.check%zu", while_num));
+                builder_add(sb, "  jmp @.check%zu", while_num);
         }
 
-        builder_add(sb, format("@.endloop%zu", while_num));
+        builder_add(sb, "@.endloop%zu", while_num);
 }
 
 static void codegen_stmt_expr(NodeStExpr *node, char **sb)
@@ -175,12 +185,12 @@ static void codegen_expr_lit(NodeLit *lit, char **sb, const char *var_name)
                 // TODO: make sure dierct register assignings are as functional
                 // as stack alloc4, loadw and storew
         case LK_ID:
-                builder_add(sb, format("  %%%s =w loadw %%.var." SV_Fmt,
-                                       var_name, Mtokstr_fmt(*lit)));
+                builder_add(sb, "  %%%s =w loadw %%.var." SV_Fmt, var_name,
+                            Mtokstr_fmt(*lit));
                 break;
         case LK_INT:
-                builder_add(sb, format("  %%%s =w copy %.*s", var_name,
-                                       (int)lit->str.count, lit->str.data));
+                builder_add(sb, "  %%%s =w copy %.*s", var_name,
+                            (int)lit->str.count, lit->str.data);
                 break;
         }
 }
@@ -191,7 +201,7 @@ static void codegen_expr_unaop(NodeUnaop *una, char **sb, const char *var_name)
         const char *rc_str(name, format(".tmp.una%zu", next_reg++));
         codegen_expr(una->expr, sb, name);
 
-        builder_add(sb, format("  %%%s =w mul %%%s, -1", var_name, name));
+        builder_add(sb, "  %%%s =w mul %%%s, -1", var_name, name);
 }
 
 static void codegen_expr_binop(NodeBinop *bin, char **sb, const char *var_name)
@@ -201,15 +211,14 @@ static void codegen_expr_binop(NodeBinop *bin, char **sb, const char *var_name)
                                    format(".tmp.ass%zu", next_reg++));
                 codegen_expr(bin->right, sb, right_name);
                 builder_add(sb, // declare local var
-                            format("  %%.var." SV_Fmt " =l alloc4 1",
-                                   Mtokstr_fmt(bin->left->as.lit)));
+                            "  %%.var." SV_Fmt " =l alloc4 1",
+                            Mtokstr_fmt(bin->left->as.lit));
                 builder_add(sb, // assign
-                            format("  storew %%%s, %%.var." SV_Fmt, right_name,
-                                   Mtokstr_fmt(bin->left->as.lit)));
+                            "  storew %%%s, %%.var." SV_Fmt, right_name,
+                            Mtokstr_fmt(bin->left->as.lit));
 
                 // output of the expression
-                builder_add(sb, format("  %%%s =w copy %%%s", var_name,
-                                       right_name));
+                builder_add(sb, "  %%%s =w copy %%%s", var_name, right_name);
                 return;
         }
 
@@ -218,9 +227,8 @@ static void codegen_expr_binop(NodeBinop *bin, char **sb, const char *var_name)
         const char *rc_str(right_name, format(".tmp.r%zu", next_reg++));
         codegen_expr(bin->right, sb, right_name);
 
-        builder_add(sb,
-                    format("  %%%s =w %s %%%s, %%%s", var_name,
-                           binopk_to_str(bin->kind), left_name, right_name));
+        builder_add(sb, "  %%%s =w %s %%%s, %%%s", var_name,
+                    binopk_to_str(bin->kind), left_name, right_name);
 }
 
 static void codegen_expr(Node *node, char **sb, const char *var_name)
@@ -264,11 +272,11 @@ char *codegen(Ast ast)
         builder_add(&sb, "export function w $main() {\n"
                          "@start");
 
-        builder_add(&sb, "  %.ret =w copy 0");
+        builder_add(&sb, "  %%.ret =w copy 0");
         codegen_stmt(ast, &sb);
 
         builder_add(&sb, "\n@.ret");
-        builder_add(&sb, "  ret %.ret");
+        builder_add(&sb, "  ret %%.ret");
         builder_add(&sb, "}");
         builder_null(&sb);
 

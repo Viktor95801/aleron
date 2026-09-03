@@ -1,24 +1,22 @@
 #include "util.h"
 
+#include <__stdarg_va_list.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
 
-// from raylib
-const char *format(const char *text, ...)
+const char *formatv(const char *fmt, va_list arg)
 {
         static char buffers[4][4096] = { 0 };
         static int index = 0;
 
         char *currentBuffer = buffers[index];
         memset(currentBuffer, 0, 4096);
-        if (text == NULL) {
+        if (fmt == NULL) {
                 return currentBuffer;
         }
 
-        va_list args;
-        va_start(args, text);
-        int requiredByteCount = vsnprintf(currentBuffer, 4096, text, args);
-        va_end(args);
+        int requiredByteCount = vsnprintf(currentBuffer, 4096, fmt, arg);
 
         if (requiredByteCount >= 4096) {
                 char *truncBuffer = buffers[index] + 4096 - 4;
@@ -31,4 +29,16 @@ const char *format(const char *text, ...)
         }
 
         return currentBuffer;
+}
+
+// from raylib
+const char *format(const char *fmt, ...)
+{
+        va_list arg;
+
+        va_start(arg);
+        const char *result = formatv(fmt, arg);
+        va_end(arg);
+
+        return result;
 }

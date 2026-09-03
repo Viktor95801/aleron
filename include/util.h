@@ -1,6 +1,7 @@
 #ifndef UTIL_H
 #define UTIL_H
 
+#include <__stdarg_va_list.h>
 #include <inttypes.h>
 #include <stdarg.h>
 #include <stdbool.h>
@@ -22,6 +23,8 @@ typedef double f64;
 
 typedef u8 byte;
 
-__attribute__((format(printf, 1, 2))) const char *format(const char *text, ...);
+__attribute__((format(printf, 1, 0))) const char *formatv(const char *fmt,
+                                                          va_list arg);
+__attribute__((format(printf, 1, 2))) const char *format(const char *fmt, ...);
 
 #endif
