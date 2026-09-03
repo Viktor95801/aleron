@@ -215,27 +215,30 @@ static void codegen_expr_lit(NodeLit *lit, char **sb, const char *var_name)
         }
 }
 
-static void codegen_expr_unaop(NodeUnaop *una, char **sb, const char *var_name)
+static void codegen_expr_unaop(NodeUnaop *node, char **sb, const char *var_name)
 {
-        assert(una->kind == UNAOP_NEG);
-        const char *rc_str(name, format(".tmp.una%zu", next_reg++));
-        codegen_expr(una->expr, sb, name);
+        switch (node->kind) {
+        case UNAOP_NEG: {
+                const char *rc_str(name, format(".tmp.una%zu", next_reg++));
+                codegen_expr(node->expr, sb, name);
 
-        builder_add(sb, "  %%%s =w mul %%%s, -1", var_name, name);
+                builder_add(sb, "  %%%s =w mul %%%s, -1", var_name, name);
+        } break;
+        }
 }
 
-static void codegen_expr_binop(NodeBinop *bin, char **sb, const char *var_name)
+static void codegen_expr_binop(NodeBinop *node, char **sb, const char *var_name)
 {
-        if (bin->kind == BINOP_ASS) {
+        if (node->kind == BINOP_ASS) {
                 const char *rc_str(right_name, // intermediates
                                    format(".tmp.ass%zu", next_reg++));
-                codegen_expr(bin->right, sb, right_name);
+                codegen_expr(node->right, sb, right_name);
                 builder_add(sb, // declare local var
                             "  %%.var." SV_Fmt " =l alloc4 1",
-                            Mtokstr_fmt(bin->left->as.lit));
+                            Mtokstr_fmt(node->left->as.lit));
                 builder_add(sb, // assign
                             "  storew %%%s, %%.var." SV_Fmt, right_name,
-                            Mtokstr_fmt(bin->left->as.lit));
+                            Mtokstr_fmt(node->left->as.lit));
 
                 // output of the expression
                 builder_add(sb, "  %%%s =w copy %%%s", var_name, right_name);
@@ -243,12 +246,12 @@ static void codegen_expr_binop(NodeBinop *bin, char **sb, const char *var_name)
         }
 
         const char *rc_str(left_name, format(".tmp.l%zu", next_reg++));
-        codegen_expr(bin->left, sb, left_name);
+        codegen_expr(node->left, sb, left_name);
         const char *rc_str(right_name, format(".tmp.r%zu", next_reg++));
-        codegen_expr(bin->right, sb, right_name);
+        codegen_expr(node->right, sb, right_name);
 
         builder_add(sb, "  %%%s =w %s %%%s, %%%s", var_name,
-                    binopk_to_str(bin->kind), left_name, right_name);
+                    binopk_to_str(node->kind), left_name, right_name);
 }
 
 static void codegen_expr(Node *node, char **sb, const char *var_name)

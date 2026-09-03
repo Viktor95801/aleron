@@ -258,7 +258,22 @@ static Node *eunary(Parser *p)
                 return new_unary(UNAOP_NEG, eunary(p));
         }
 
-        return eprimary(p);
+        Node *result = eprimary(p);
+
+        for (;;) {
+                if (consume(p, TK_MUL)) {
+                        result = new_unary(UNAOP_STAR, result);
+                        continue;
+                }
+                if (consume(p, TK_AMP)) {
+                        result = new_unary(UNAOP_ADDR, result);
+                        continue;
+                }
+
+                break;
+        }
+
+        return result;
 }
 
 static Node *eprimary(Parser *p)

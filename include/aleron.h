@@ -4,6 +4,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 
+#include "util.h"
 #include "vendor/sv.h"
 
 #pragma region error
@@ -30,6 +31,7 @@ typedef enum {
         TK_MUL,
         TK_DIV,
         TK_ASS,
+        TK_AMP, // &
 
         TK_OPAREN,
         TK_CPAREN,
@@ -110,6 +112,8 @@ typedef struct NodeBinop {
 
 typedef enum {
         UNAOP_NEG,
+        UNAOP_ADDR,
+        UNAOP_STAR, // deref
 } UnaopKind;
 typedef struct {
         UnaopKind kind;

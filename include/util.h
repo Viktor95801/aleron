@@ -23,8 +23,13 @@ typedef double f64;
 
 typedef u8 byte;
 
-__attribute__((format(printf, 1, 0))) const char *formatv(const char *fmt,
-                                                          va_list arg);
-__attribute__((format(printf, 1, 2))) const char *format(const char *fmt, ...);
+#if __has_attribute(format)
+#define ATT_FORMAT(a, b) __attribute__((format(printf, a, b)))
+#else
+#define ATT_FORMAT(a, b)
+#endif
+
+ATT_FORMAT(1, 0) const char *formatv(const char *fmt, va_list arg);
+ATT_FORMAT(1, 2) const char *format(const char *fmt, ...);
 
 #endif

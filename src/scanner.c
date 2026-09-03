@@ -32,6 +32,8 @@ const char *token_to_str(Token *token)
                 return "/";
         case TK_ASS:
                 return "=";
+        case TK_AMP:
+                return "&";
 
         case TK_OPAREN:
                 return "(";
@@ -86,6 +88,7 @@ ScanResult next_token(char **src)
                 case TK_MUL:
                 case TK_OPAREN:
                 case TK_CCURLY:
+                case TK_AMP:
                 case TK_OCURLY:
 
                 case KW_RETURN:
@@ -165,6 +168,8 @@ ScanResult next_token(char **src)
                 singleCharCase(TK_DIV);
         case '=':
                 singleCharCase(TK_ASS);
+        case '&':
+                singleCharCase(TK_AMP);
 
         case '(':
                 singleCharCase(TK_OPAREN);

@@ -204,6 +204,10 @@ static const char *unaopk_to_str(UnaopKind kind)
         switch (kind) {
         case UNAOP_NEG:
                 return "neg";
+        case UNAOP_ADDR:
+                return "addr";
+        case UNAOP_STAR:
+                return "star";
         }
 
         assert(0 && format("unrecognized %d", kind));
