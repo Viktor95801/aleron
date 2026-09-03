@@ -1,6 +1,7 @@
 #include "aleron.h"
 
 #include "vendor/stb_ds.h"
+#include <math.h>
 
 typedef struct {
         const char *src;
@@ -65,6 +66,7 @@ static Node *sstmt(Parser *p);
 static Node *sblock(Parser *p);
 static Node *sexpr(Parser *p);
 static Node *sif(Parser *p);
+static Node *sfor(Parser *p);
 static Node *sreturn(Parser *p);
 
 Ast parse(const char *source)
@@ -88,6 +90,8 @@ static Node *sstmt(Parser *p)
                 return sif(p);
         case KW_RETURN:
                 return sreturn(p);
+        case KW_FOR:
+                return sfor(p);
 
         case TK_OCURLY:
                 return sblock(p);
@@ -123,6 +127,21 @@ static Node *sexpr(Parser *p)
         expect(p, TK_SEMI, ";");
 
         return se;
+}
+
+static Node *sfor(Parser *p)
+{
+        expect(p, KW_FOR, "for");
+
+        Node *cond = NULL;
+        if (p->ctok.kind != TK_OCURLY) {
+                cond = expr(p);
+        } else {
+                cond = new_lit(LK_INT, SV("1"));
+        }
+        Node *block = sblock(p);
+
+        return new_stfwhile(cond, block);
 }
 
 static Node *sif(Parser *p)

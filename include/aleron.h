@@ -41,6 +41,7 @@ typedef enum {
         KW_RETURN,
         KW_IF,
         KW_ELSE,
+        KW_FOR,
 } TokenKind;
 
 typedef struct {
@@ -80,6 +81,7 @@ typedef enum {
         NKSt_RETURN,
         NKSt_BLOCK,
         NKSt_IF,
+        NKSt_FOR_WHILE, // for cond {} used as a while loop
         NKSt_EXPR,
 } NodeKind;
 
@@ -128,6 +130,11 @@ typedef struct {
 } NodeStIf;
 
 typedef struct {
+        Node *cond;
+        Node *block;
+} NodeStForWhile;
+
+typedef struct {
         Node *expr;
 } NodeStExpr;
 
@@ -141,6 +148,7 @@ struct Node {
                 NodeStReturn streturn;
                 NodeStBlock stblock;
                 NodeStIf stif;
+                NodeStForWhile stfwhile;
                 NodeStExpr stexpr;
         } as;
 };
@@ -151,6 +159,7 @@ void destroy_node(void *ptr);
 Node *new_streturn(Node *expr);
 Node *new_stblock(Node **list);
 Node *new_stif(Node *cond, Node *block, Node *ifnot);
+Node *new_stfwhile(Node *cond, Node *block);
 Node *new_stexpr(Node *expr);
 
 Node *new_node(NodeKind kind);

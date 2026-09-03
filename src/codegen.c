@@ -46,6 +46,7 @@ static bool codegen_stmt(Node *node, char **sb);
 static bool codegen_stmt_block(NodeStBlock *node, char **sb);
 static void codegen_stmt_return(NodeStReturn *node, char **sb);
 static void codegen_stmt_if(NodeStIf *node, char **sb);
+static void codegen_stmt_fwhile(NodeStForWhile *node, char **sb);
 static void codegen_stmt_expr(NodeStExpr *node, char **sb);
 
 static void codegen_expr(Ast ast, char **sb, const char *var_name);
@@ -68,6 +69,9 @@ static bool codegen_stmt(Node *node, char **sb)
                 return true;
         case NKSt_IF:
                 codegen_stmt_if(&node->as.stif, sb);
+                return false;
+        case NKSt_FOR_WHILE:
+                codegen_stmt_fwhile(&node->as.stfwhile, sb);
                 return false;
 
         case NKEx_BINOP:
@@ -126,6 +130,25 @@ static void codegen_stmt_if(NodeStIf *node, char **sb)
         }
 
         builder_add(sb, format("@.endif%zu", if_num));
+}
+
+static void codegen_stmt_fwhile(NodeStForWhile *node, char **sb)
+{
+        size_t while_num = next_reg++;
+        builder_add(sb, format("\n@.check%zu", while_num));
+        const char *rc_str(cond, format(".cond%zu", next_reg++));
+        codegen_expr(node->cond, sb, cond);
+
+        builder_add(sb, format("  jnz %%%s, @.loop%zu, @.endloop%zu", cond,
+                               while_num, while_num));
+
+        builder_add(sb, format("@.loop%zu", while_num));
+        bool terminated = codegen_stmt(node->block, sb);
+        if (!terminated) {
+                builder_add(sb, format("  jmp @.check%zu", while_num));
+        }
+
+        builder_add(sb, format("@.endloop%zu", while_num));
 }
 
 static void codegen_stmt_expr(NodeStExpr *node, char **sb)
@@ -216,6 +239,7 @@ static void codegen_expr(Node *node, char **sb, const char *var_name)
         case NKSt_IF:
         case NKSt_BLOCK:
         case NKSt_EXPR:
+        case NKSt_FOR_WHILE:
         }
         error(format("invalid expression %d", node->kind));
 }

@@ -1,0 +1,5 @@
+{
+  "code": 0,
+  "stdout": "export function w $main() {\n@start\n  %.ret =w copy 0\n  %.tmp.ass0 =w copy 0\n  %.var.i =l alloc4 1\n  storew %.tmp.ass0, %.var.i\n  %.sexpr =w copy %.tmp.ass0\n\n@.check1\n  %.tmp.l3 =w loadw %.var.i\n  %.tmp.r4 =w copy 10\n  %.cond2 =w sub %.tmp.l3, %.tmp.r4\n  jnz %.cond2, @.loop1, @.endloop1\n@.loop1\n  %.tmp.l6 =w loadw %.var.i\n  %.tmp.r7 =w copy 1\n  %.tmp.ass5 =w add %.tmp.l6, %.tmp.r7\n  %.var.i =l alloc4 1\n  storew %.tmp.ass5, %.var.i\n  %.sexpr =w copy %.tmp.ass5\n  jmp @.check1\n@.endloop1\n  %.tmp8 =w loadw %.var.i\n  %.ret =w copy %.tmp8\n  jmp @.ret\n\n@.ret\n  ret %.ret\n}\n\n",
+  "stderr": ""
+}

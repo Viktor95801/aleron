@@ -32,6 +32,11 @@ void destroy_node(void *ptr)
                         del(stif.ifnot);
                 }
         } break;
+        case NKSt_FOR_WHILE: {
+                NodeStForWhile stwhile = node->as.stfwhile;
+                del(stwhile.cond);
+                del(stwhile.block);
+        } break;
         case NKSt_EXPR: {
                 NodeStExpr stexpr = node->as.stexpr;
                 del(stexpr.expr);
@@ -79,6 +84,17 @@ Node *new_stif(Node *cond, Node *block, Node *ifnot)
         stif->block = block;
         stif->cond = cond;
         stif->ifnot = ifnot;
+
+        return result;
+}
+
+Node *new_stfwhile(Node *cond, Node *block)
+{
+        Node *result = new_node(NKSt_FOR_WHILE);
+        NodeStForWhile *stfwhile = &result->as.stfwhile;
+
+        stfwhile->cond = cond;
+        stfwhile->block = block;
 
         return result;
 }
@@ -204,6 +220,18 @@ static void dump_streturn(NodeStReturn *node, FILE *file, u32 indent)
         fputs("}", file);
 }
 
+static void dump_stfwhile(NodeStForWhile *node, FILE *file, u32 indent)
+{
+        assert(node);
+        assert(file);
+
+        fprintf(file, "while(");
+        dump_node(node->cond, file, indent);
+
+        fprintf(file, ") ");
+        dump_node(node->block, file, indent + 1);
+}
+
 static void dump_stif(NodeStIf *node, FILE *file, u32 indent)
 {
         assert(node);
@@ -296,6 +324,9 @@ static void dump_node(Node *node, FILE *file, u32 indent)
                 return;
         case NKSt_IF:
                 dump_stif(&node->as.stif, file, indent);
+                return;
+        case NKSt_FOR_WHILE:
+                dump_stfwhile(&node->as.stfwhile, file, indent);
                 return;
         case NKSt_EXPR:
                 dump_stexpr(&node->as.stexpr, file, indent);

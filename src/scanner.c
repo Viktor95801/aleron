@@ -51,6 +51,8 @@ const char *token_to_str(Token *token)
                 return "kw:if";
         case KW_ELSE:
                 return "kw:else";
+        case KW_FOR:
+                return "kw:for";
         }
 }
 
@@ -89,6 +91,7 @@ ScanResult next_token(char **src)
                 case KW_RETURN:
                 case KW_IF:
                 case KW_ELSE:
+                case KW_FOR:
                 }
 
                 shdefault(keyword_ht, TK_EOF);
@@ -96,6 +99,7 @@ ScanResult next_token(char **src)
                 shput(keyword_ht, "return", KW_RETURN);
                 shput(keyword_ht, "if", KW_IF);
                 shput(keyword_ht, "else", KW_ELSE);
+                shput(keyword_ht, "for", KW_FOR);
                 init_scanner_mod = true;
         }
         while (isspace(**src)) {

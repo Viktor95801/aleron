@@ -1,0 +1,5 @@
+{
+  "code": 0,
+  "stdout": "{\nident:i\n=\nint:0\n;\nkw:for\nident:i\n-\nint:10\n{\nident:i\n=\nident:i\n+\nint:1\n;\n}\nkw:return\nident:i\n;\n}\n",
+  "stderr": ""
+}

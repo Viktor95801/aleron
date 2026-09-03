@@ -1,0 +1,5 @@
+{
+  "code": 0,
+  "stdout": "block{if(binary(sub,2:int,1:int)) block{return{2:int}}return{3:int}}\n",
+  "stderr": ""
+}

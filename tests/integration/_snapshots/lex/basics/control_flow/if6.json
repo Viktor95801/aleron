@@ -1,0 +1,5 @@
+{
+  "code": 0,
+  "stdout": "{\nkw:if\nint:1\n{\nint:1\n;\nint:2\n;\nkw:return\nint:3\n;\n}\nkw:else\n{\nkw:return\nint:4\n;\n}\n}\n",
+  "stderr": ""
+}

@@ -1,0 +1,5 @@
+{
+  "code": 0,
+  "stdout": "block{if(0:int) block{expr{1:int}expr{2:int}return{3:int}} else block{return{4:int}}}\n",
+  "stderr": ""
+}
