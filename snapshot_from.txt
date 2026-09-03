@@ -1,3 +1,6 @@
-bin "basics/assign/ass1.ale" 3;
-bin "basics/assign/ass2.ale" 8;
-bin "basics/assign/ass3.ale" 9;
+bin "basics/control_flow/if1.ale" 3;
+bin "basics/control_flow/if2.ale" 3;
+bin "basics/control_flow/if3.ale" 2;
+bin "basics/control_flow/if4.ale" 2;
+bin "basics/control_flow/if5.ale" 4;
+bin "basics/control_flow/if6.ale" 3;

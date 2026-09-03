@@ -96,11 +96,25 @@ static void codegen_stmt_return(NodeStReturn *node, char **sb)
 
 static void codegen_stmt_if(NodeStIf *node, char **sb)
 {
-        const char *rc_str(cond, format(".if%zu", next_reg++));
+        builder_add(sb, "");
+        const char *rc_str(cond, format(".cond%zu", next_reg++));
         codegen_expr(node->cond, sb, cond);
 
-        fputs("TODO", stderr);
-        exit(1);
+        size_t if_num = next_reg++;
+        builder_add(sb, format("  jnz %%%s, @.if%zu, @.else%zu", cond, if_num,
+                               if_num));
+
+        builder_add(sb, format("@.if%zu", if_num));
+        codegen_stmt(node->block, sb);
+        builder_add(sb, format("\n  jmp @.endif%zu", if_num));
+
+        builder_add(sb, format("@.else%zu", if_num));
+        if (node->ifnot) {
+                codegen_stmt(node->ifnot, sb);
+        }
+        builder_add(sb, format("\n  jmp @.endif%zu", if_num));
+
+        builder_add(sb, format("@.endif%zu", if_num));
 }
 
 static void codegen_stmt_expr(NodeStExpr *node, char **sb)
