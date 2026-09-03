@@ -82,6 +82,7 @@ typedef enum {
         NKSt_BLOCK,
         NKSt_IF,
         NKSt_FOR_WHILE, // for cond {} used as a while loop
+        NKSt_FOR,
         NKSt_EXPR,
 } NodeKind;
 
@@ -130,6 +131,14 @@ typedef struct {
 } NodeStIf;
 
 typedef struct {
+        // for init; cond; post {}
+        Node *init;
+        Node *cond;
+        Node *post;
+        Node *block;
+} NodeStFor;
+
+typedef struct {
         Node *cond;
         Node *block;
 } NodeStForWhile;
@@ -148,6 +157,7 @@ struct Node {
                 NodeStReturn streturn;
                 NodeStBlock stblock;
                 NodeStIf stif;
+                NodeStFor stfor;
                 NodeStForWhile stfwhile;
                 NodeStExpr stexpr;
         } as;
@@ -159,6 +169,7 @@ void destroy_node(void *ptr);
 Node *new_streturn(Node *expr);
 Node *new_stblock(Node **list);
 Node *new_stif(Node *cond, Node *block, Node *ifnot);
+Node *new_stfor(Node *init, Node *cond, Node *post, Node *block);
 Node *new_stfwhile(Node *cond, Node *block);
 Node *new_stexpr(Node *expr);
 

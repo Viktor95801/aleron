@@ -46,6 +46,7 @@ static bool codegen_stmt(Node *node, char **sb);
 static bool codegen_stmt_block(NodeStBlock *node, char **sb);
 static void codegen_stmt_return(NodeStReturn *node, char **sb);
 static void codegen_stmt_if(NodeStIf *node, char **sb);
+static void codegen_stmt_for(NodeStFor *node, char **sb);
 static void codegen_stmt_fwhile(NodeStForWhile *node, char **sb);
 static void codegen_stmt_expr(NodeStExpr *node, char **sb);
 
@@ -72,6 +73,9 @@ static bool codegen_stmt(Node *node, char **sb)
                 return false;
         case NKSt_FOR_WHILE:
                 codegen_stmt_fwhile(&node->as.stfwhile, sb);
+                return false;
+        case NKSt_FOR:
+                codegen_stmt_for(&node->as.stfor, sb);
                 return false;
 
         case NKEx_BINOP:
@@ -130,6 +134,11 @@ static void codegen_stmt_if(NodeStIf *node, char **sb)
         }
 
         builder_add(sb, format("@.endif%zu", if_num));
+}
+
+static void codegen_stmt_for(NodeStFor *node, char **sb)
+{
+        size_t for_num = next_reg++;
 }
 
 static void codegen_stmt_fwhile(NodeStForWhile *node, char **sb)
@@ -240,6 +249,7 @@ static void codegen_expr(Node *node, char **sb, const char *var_name)
         case NKSt_BLOCK:
         case NKSt_EXPR:
         case NKSt_FOR_WHILE:
+        case NKSt_FOR:
         }
         error(format("invalid expression %d", node->kind));
 }

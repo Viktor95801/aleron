@@ -32,6 +32,13 @@ void destroy_node(void *ptr)
                         del(stif.ifnot);
                 }
         } break;
+        case NKSt_FOR: {
+                NodeStFor stfor = node->as.stfor;
+                del(stfor.cond);
+                del(stfor.init);
+                del(stfor.post);
+                del(stfor.block);
+        } break;
         case NKSt_FOR_WHILE: {
                 NodeStForWhile stwhile = node->as.stfwhile;
                 del(stwhile.cond);
@@ -84,6 +91,19 @@ Node *new_stif(Node *cond, Node *block, Node *ifnot)
         stif->block = block;
         stif->cond = cond;
         stif->ifnot = ifnot;
+
+        return result;
+}
+
+Node *new_stfor(Node *init, Node *cond, Node *post, Node *block)
+{
+        Node *result = new_node(NKSt_FOR);
+        NodeStFor *stfor = &result->as.stfor;
+
+        stfor->init = init;
+        stfor->cond = cond;
+        stfor->post = post;
+        stfor->block = block;
 
         return result;
 }
@@ -220,6 +240,24 @@ static void dump_streturn(NodeStReturn *node, FILE *file, u32 indent)
         fputs("}", file);
 }
 
+static void dump_stfor(NodeStFor *node, FILE *file, u32 indent)
+{
+        assert(node);
+        assert(file);
+
+        fprintf(file, "for(");
+        dump_node(node->init, file, indent);
+        fprintf(file, "; ");
+
+        dump_node(node->cond, file, indent);
+        fprintf(file, "; ");
+
+        dump_node(node->post, file, indent);
+        fprintf(file, ") ");
+
+        dump_node(node->block, file, indent + 1);
+}
+
 static void dump_stfwhile(NodeStForWhile *node, FILE *file, u32 indent)
 {
         assert(node);
@@ -324,6 +362,9 @@ static void dump_node(Node *node, FILE *file, u32 indent)
                 return;
         case NKSt_IF:
                 dump_stif(&node->as.stif, file, indent);
+                return;
+        case NKSt_FOR:
+                dump_stfor(&node->as.stfor, file, indent);
                 return;
         case NKSt_FOR_WHILE:
                 dump_stfwhile(&node->as.stfwhile, file, indent);

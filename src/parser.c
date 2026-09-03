@@ -1,6 +1,7 @@
 #include "aleron.h"
 
 #include "vendor/stb_ds.h"
+#include <string.h>
 
 typedef struct {
         const char *src;
@@ -26,6 +27,7 @@ static void advance(Parser *p)
 
 static void init_parser(Parser *p, const char *source)
 {
+        memset(p, 0, sizeof(Parser));
         p->src = source;
         p->pos = (char *)source;
 
@@ -33,9 +35,13 @@ static void init_parser(Parser *p, const char *source)
         advance(p);
 }
 
+static bool check(Parser *p, TokenKind kind)
+{
+        return p->ctok.kind == kind;
+}
 static bool consume(Parser *p, TokenKind kind)
 {
-        if (p->ctok.kind == kind) {
+        if (check(p, kind)) {
                 advance(p);
                 return true;
         }
@@ -107,7 +113,7 @@ static Node *sblock(Parser *p)
 
         Node **list = NULL;
 
-        while (p->ctok.kind != TK_CCURLY && p->ctok.kind != TK_EOF) {
+        while (!check(p, TK_CCURLY) && !check(p, TK_EOF)) {
                 Node *st = sstmt(p);
                 arrpush(list, st);
         }
@@ -132,15 +138,36 @@ static Node *sfor(Parser *p)
 {
         expect(p, KW_FOR, "for");
 
-        Node *cond = NULL;
-        if (p->ctok.kind != TK_OCURLY) {
-                cond = expr(p);
+        Node *cond_or_init = NULL;
+        if (check(p, TK_SEMI)) {
+                cond_or_init = new_lit(LK_INT, SV("0"));
+                goto PARSE_FOR;
+        } else if (!check(p, TK_OCURLY)) {
+                cond_or_init = expr(p);
         } else {
-                cond = new_lit(LK_INT, SV("1"));
+                cond_or_init = new_lit(LK_INT, SV("1"));
+        }
+
+        // this is a for, not a while
+PARSE_FOR:
+        if (consume(p, TK_SEMI)) {
+                Node *init = cond_or_init;
+                Node *cond = expr(p);
+                expect(p, TK_SEMI, ";");
+
+                Node *post = NULL;
+                if (!check(p, TK_OCURLY)) {
+                        post = expr(p);
+                } else {
+                        post = new_lit(LK_INT, SV("0"));
+                }
+
+                Node *block = sblock(p);
+                return new_stfor(init, cond, post, block);
         }
         Node *block = sblock(p);
 
-        return new_stfwhile(cond, block);
+        return new_stfwhile(cond_or_init, block);
 }
 
 static Node *sif(Parser *p)
@@ -245,13 +272,13 @@ static Node *eprimary(Parser *p)
                 return node;
         }
 
-        if (p->ctok.kind == TK_ID) {
+        if (check(p, TK_ID)) {
                 Node *node = new_lit(LK_ID, p->ctok.str);
                 advance(p);
                 return node;
         }
 
-        if (p->ctok.kind == TK_INT) {
+        if (check(p, TK_INT)) {
                 Node *node = new_lit(LK_INT, p->ctok.str);
                 advance(p);
                 return node;
