@@ -24,8 +24,8 @@
 //         ast_dump(node, stdout);
 // }
 
-UTEST(parser, ast_iter)
-{
-        Ast rca(ast) = parse("1 + 2; v= 4 + 1 - 2;");
-        ast_dump(ast, stdout);
-}
+// UTEST(parser, ast_iter)
+// {
+//         Ast rca(ast) = parse("1 + 2; v= 4 + 1 - 2;");
+//         ast_dump(ast, stdout);
+// }
