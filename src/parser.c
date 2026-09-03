@@ -1,7 +1,6 @@
 #include "aleron.h"
 
 #include "vendor/stb_ds.h"
-#include <math.h>
 
 typedef struct {
         const char *src;
