@@ -1,1 +1,3 @@
-bin "basics/control_flow/while1.ale" 10;
+
+bin "basics/control_flow/for1.ale" 55;
+bin "basics/control_flow/for2.ale" 3;

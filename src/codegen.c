@@ -149,6 +149,26 @@ static void codegen_stmt_if(NodeStIf *node, char **sb)
 static void codegen_stmt_for(NodeStFor *node, char **sb)
 {
         size_t for_num = next_reg++;
+        builder_add(sb, "\n@.init%zu", for_num);
+        codegen_expr(node->init, sb, ".init");
+
+        builder_add(sb, "@.check%zu", for_num);
+        const char *rc_str(cond, format(".cond%zu", next_reg++));
+        codegen_expr(node->cond, sb, cond);
+
+        builder_add(sb, "  jnz %%%s, @.loop%zu, @.endloop%zu", cond, for_num,
+                    for_num);
+
+        builder_add(sb, "@.loop%zu", for_num);
+        bool terminated = codegen_stmt(node->block, sb);
+
+        if (!terminated) {
+                builder_add(sb, "");
+                codegen_expr(node->post, sb, ".post");
+                builder_add(sb, "  jmp @.check%zu", for_num);
+        }
+
+        builder_add(sb, "@.endloop%zu", for_num);
 }
 
 static void codegen_stmt_fwhile(NodeStForWhile *node, char **sb)

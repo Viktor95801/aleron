@@ -1,0 +1,6 @@
+{
+    for ; 1; {
+        return 3;
+    }
+    return 5;
+}
