@@ -1,0 +1,5 @@
+{
+  "code": 0,
+  "stdout": "export function w $main() {\n@start\n  %.ret =w copy 0\n\n  %.tmp.l1 =w copy 1\n  %.tmp.r2 =w copy 1\n  %.cond0 =w sub %.tmp.l1, %.tmp.r2\n  jnz %.cond0, @.if3, @.else3\n@.if3\n  %.tmp4 =w copy 2\n  %.ret =w copy %.tmp4\n  jmp @.ret\n@.else3\n@.endif3\n  %.tmp5 =w copy 3\n  %.ret =w copy %.tmp5\n  jmp @.ret\n\n@.ret\n  ret %.ret\n}\n\n",
+  "stderr": ""
+}

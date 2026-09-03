@@ -40,9 +40,11 @@ static void builder_destroy(char *sb)
 
 static u64 next_reg = 0;
 
-static void codegen_stmt(Node *node, char **sb);
+// returns whether this returns or not. qbe doesnt allow code after a jmp or
+// something like that, so this is useful
+static bool codegen_stmt(Node *node, char **sb);
+static bool codegen_stmt_block(NodeStBlock *node, char **sb);
 static void codegen_stmt_return(NodeStReturn *node, char **sb);
-static void codegen_stmt_block(NodeStBlock *node, char **sb);
 static void codegen_stmt_if(NodeStIf *node, char **sb);
 static void codegen_stmt_expr(NodeStExpr *node, char **sb);
 
@@ -51,22 +53,22 @@ static void codegen_expr_lit(NodeLit *lit, char **sb, const char *var_name);
 static void codegen_expr_unaop(NodeUnaop *una, char **sb, const char *var_name);
 static void codegen_expr_binop(NodeBinop *bin, char **sb, const char *var_name);
 
-static void codegen_stmt(Node *node, char **sb)
+static bool codegen_stmt(Node *node, char **sb)
 {
         assert(node);
         switch (node->kind) {
         case NKSt_EXPR:
                 codegen_stmt_expr(&node->as.stexpr, sb);
-                return;
+                return false;
         case NKSt_BLOCK:
-                codegen_stmt_block(&node->as.stblock, sb);
-                return;
+                return codegen_stmt_block(&node->as.stblock, sb);
+
         case NKSt_RETURN:
                 codegen_stmt_return(&node->as.streturn, sb);
-                return;
+                return true;
         case NKSt_IF:
                 codegen_stmt_if(&node->as.stif, sb);
-                return;
+                return false;
 
         case NKEx_BINOP:
         case NKEx_LIT:
@@ -77,13 +79,17 @@ static void codegen_stmt(Node *node, char **sb)
         error(format("invalid statement %d", node->kind));
 }
 
-static void codegen_stmt_block(NodeStBlock *node, char **sb)
+static bool codegen_stmt_block(NodeStBlock *node, char **sb)
 {
         assert(node);
 
         for (int i = 0; i < arrlen(node->list); ++i) {
-                codegen_stmt(node->list[i], sb);
+                bool terminated = codegen_stmt(node->list[i], sb);
+                if (terminated) {
+                        return true;
+                }
         }
+        return false;
 }
 
 static void codegen_stmt_return(NodeStReturn *node, char **sb)
@@ -92,6 +98,7 @@ static void codegen_stmt_return(NodeStReturn *node, char **sb)
         codegen_expr(node->expr, sb, name);
 
         builder_add(sb, format("  %%.ret =w copy %%%s", name));
+        builder_add(sb, format("  jmp @.ret"));
 }
 
 static void codegen_stmt_if(NodeStIf *node, char **sb)
@@ -105,14 +112,18 @@ static void codegen_stmt_if(NodeStIf *node, char **sb)
                                if_num));
 
         builder_add(sb, format("@.if%zu", if_num));
-        codegen_stmt(node->block, sb);
-        builder_add(sb, format("\n  jmp @.endif%zu", if_num));
+        bool terminated = codegen_stmt(node->block, sb);
+        if (!terminated) {
+                builder_add(sb, format("  jmp @.endif%zu", if_num));
+        }
 
         builder_add(sb, format("@.else%zu", if_num));
         if (node->ifnot) {
-                codegen_stmt(node->ifnot, sb);
+                terminated = codegen_stmt(node->ifnot, sb);
         }
-        builder_add(sb, format("\n  jmp @.endif%zu", if_num));
+        if (!terminated) {
+                builder_add(sb, format("  jmp @.endif%zu", if_num));
+        }
 
         builder_add(sb, format("@.endif%zu", if_num));
 }
@@ -222,6 +233,7 @@ char *codegen(Ast ast)
         builder_add(&sb, "  %.ret =w copy 0");
         codegen_stmt(ast, &sb);
 
+        builder_add(&sb, "\n@.ret");
         builder_add(&sb, "  ret %.ret");
         builder_add(&sb, "}");
         builder_null(&sb);
