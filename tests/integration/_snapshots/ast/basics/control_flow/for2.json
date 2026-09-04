@@ -1,0 +1,5 @@
+{
+  "code": 0,
+  "stdout": "block{for(0:int; 1:int; 0:int) block{return{3:int}}return{5:int}}\n",
+  "stderr": ""
+}

@@ -1,0 +1,5 @@
+{
+  "code": 0,
+  "stdout": "block{expr{binary(ass,i:id,0:int)}expr{binary(ass,j:id,0:int)}for(binary(ass,i:id,0:int); binary(sub,i:id,11:int); binary(ass,i:id,binary(add,i:id,1:int))) block{expr{binary(ass,j:id,binary(add,i:id,j:id))}}return{j:id}}\n",
+  "stderr": ""
+}

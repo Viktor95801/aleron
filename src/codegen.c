@@ -9,18 +9,19 @@
 #include <stdlib.h>
 
 // add raw
-/* static void builder_addr(char **sb, const char *str)
+/* static void builder_addr( const char *str)
 {
         assert(str);
 
         size_t len = strlen(str);
-        i32 where = arraddnindex(*sb, len);
-        strncpy(*sb + where, str, len);
+        i32 where = arraddnindex(*sb                        , len);
+        strncpy(*sb + where                                 , str , len);
 }
  */
 
-__attribute__((format(printf, 2, 3))) static void
-builder_add(char **sb, const char *fmt, ...)
+char *sb = NULL;
+
+ATT_FORMAT(1, 2) static void builder_add(const char *fmt, ...)
 {
         assert(fmt);
 
@@ -30,20 +31,20 @@ builder_add(char **sb, const char *fmt, ...)
 
         const char *result = formatv(fmt, arg);
         size_t len = strlen(result);
-        char *where = arraddnptr(*sb, len);
+        char *where = arraddnptr(sb, len);
 
         memcpy(where, result, len);
-        arrpush(*sb, '\n');
+        arrpush(sb, '\n');
 
         va_end(arg);
 }
 
-static void builder_null(char **sb)
+static void builder_null()
 {
-        arrpush(*sb, '\0');
+        arrpush(sb, '\0');
 }
 
-static void builder_destroy(char *sb)
+static void builder_destroy()
 {
         assert(sb);
         arrfree(sb);
@@ -53,40 +54,40 @@ static u64 next_reg = 0;
 
 // returns whether this returns or not. qbe doesnt allow code after a jmp or
 // something like that, so this is useful
-static bool codegen_stmt(Node *node, char **sb);
-static bool codegen_stmt_block(NodeStBlock *node, char **sb);
-static void codegen_stmt_return(NodeStReturn *node, char **sb);
-static void codegen_stmt_if(NodeStIf *node, char **sb);
-static void codegen_stmt_for(NodeStFor *node, char **sb);
-static void codegen_stmt_fwhile(NodeStForWhile *node, char **sb);
-static void codegen_stmt_expr(NodeStExpr *node, char **sb);
+static bool codegen_stmt(Node *node);
+static bool codegen_stmt_block(NodeStBlock *node);
+static void codegen_stmt_return(NodeStReturn *node);
+static void codegen_stmt_if(NodeStIf *node);
+static void codegen_stmt_for(NodeStFor *node);
+static void codegen_stmt_fwhile(NodeStForWhile *node);
+static void codegen_stmt_expr(NodeStExpr *node);
 
-static void codegen_expr(Ast ast, char **sb, const char *var_name);
-static void codegen_expr_lit(NodeLit *lit, char **sb, const char *var_name);
-static void codegen_expr_unaop(NodeUnaop *una, char **sb, const char *var_name);
-static void codegen_expr_binop(NodeBinop *bin, char **sb, const char *var_name);
+static void codegen_expr(Ast ast, const char *var_name);
+static void codegen_expr_lit(NodeLit *lit, const char *var_name);
+static void codegen_expr_unaop(NodeUnaop *una, const char *var_name);
+static void codegen_expr_binop(NodeBinop *bin, const char *var_name);
 
-static bool codegen_stmt(Node *node, char **sb)
+static bool codegen_stmt(Node *node)
 {
         assert(node);
         switch (node->kind) {
         case NKSt_EXPR:
-                codegen_stmt_expr(&node->as.stexpr, sb);
+                codegen_stmt_expr(&node->as.stexpr);
                 return false;
         case NKSt_BLOCK:
-                return codegen_stmt_block(&node->as.stblock, sb);
+                return codegen_stmt_block(&node->as.stblock);
 
         case NKSt_RETURN:
-                codegen_stmt_return(&node->as.streturn, sb);
+                codegen_stmt_return(&node->as.streturn);
                 return true;
         case NKSt_IF:
-                codegen_stmt_if(&node->as.stif, sb);
+                codegen_stmt_if(&node->as.stif);
                 return false;
         case NKSt_FOR_WHILE:
-                codegen_stmt_fwhile(&node->as.stfwhile, sb);
+                codegen_stmt_fwhile(&node->as.stfwhile);
                 return false;
         case NKSt_FOR:
-                codegen_stmt_for(&node->as.stfor, sb);
+                codegen_stmt_for(&node->as.stfor);
                 return false;
 
         case NKEx_BINOP:
@@ -98,12 +99,12 @@ static bool codegen_stmt(Node *node, char **sb)
         error(format("invalid statement %d", node->kind));
 }
 
-static bool codegen_stmt_block(NodeStBlock *node, char **sb)
+static bool codegen_stmt_block(NodeStBlock *node)
 {
         assert(node);
 
         for (int i = 0; i < arrlen(node->list); ++i) {
-                bool terminated = codegen_stmt(node->list[i], sb);
+                bool terminated = codegen_stmt(node->list[i]);
                 if (terminated) {
                         return true;
                 }
@@ -111,91 +112,91 @@ static bool codegen_stmt_block(NodeStBlock *node, char **sb)
         return false;
 }
 
-static void codegen_stmt_return(NodeStReturn *node, char **sb)
+static void codegen_stmt_return(NodeStReturn *node)
 {
         const char *rc_str(name, format(".tmp%zu", next_reg++));
-        codegen_expr(node->expr, sb, name);
+        codegen_expr(node->expr, name);
 
-        builder_add(sb, "  %%.ret =w copy %%%s", name);
-        builder_add(sb, "  jmp @.ret");
+        builder_add("  %%.ret =w copy %%%s", name);
+        builder_add("  jmp @.ret");
 }
 
-static void codegen_stmt_if(NodeStIf *node, char **sb)
+static void codegen_stmt_if(NodeStIf *node)
 {
-        builder_add(sb, "");
+        builder_add("");
         const char *rc_str(cond, format(".cond%zu", next_reg++));
-        codegen_expr(node->cond, sb, cond);
+        codegen_expr(node->cond, cond);
 
         size_t if_num = next_reg++;
-        builder_add(sb, "  jnz %%%s, @.if%zu, @.else%zu", cond, if_num, if_num);
+        builder_add("  jnz %%%s, @.if%zu, @.else%zu", cond, if_num, if_num);
 
-        builder_add(sb, "@.if%zu", if_num);
-        bool terminated = codegen_stmt(node->block, sb);
+        builder_add("@.if%zu", if_num);
+        bool terminated = codegen_stmt(node->block);
         if (!terminated) {
-                builder_add(sb, "  jmp @.endif%zu", if_num);
+                builder_add("  jmp @.endif%zu", if_num);
         }
 
-        builder_add(sb, "@.else%zu", if_num);
+        builder_add("@.else%zu", if_num);
         if (node->ifnot) {
-                terminated = codegen_stmt(node->ifnot, sb);
+                terminated = codegen_stmt(node->ifnot);
         }
         if (!terminated) {
-                builder_add(sb, "  jmp @.endif%zu", if_num);
+                builder_add("  jmp @.endif%zu", if_num);
         }
 
-        builder_add(sb, "@.endif%zu", if_num);
+        builder_add("@.endif%zu", if_num);
 }
 
-static void codegen_stmt_for(NodeStFor *node, char **sb)
+static void codegen_stmt_for(NodeStFor *node)
 {
         size_t for_num = next_reg++;
-        builder_add(sb, "\n@.init%zu", for_num);
-        codegen_expr(node->init, sb, ".init");
+        builder_add("\n@.init%zu", for_num);
+        codegen_expr(node->init, ".init");
 
-        builder_add(sb, "@.check%zu", for_num);
+        builder_add("@.check%zu", for_num);
         const char *rc_str(cond, format(".cond%zu", next_reg++));
-        codegen_expr(node->cond, sb, cond);
+        codegen_expr(node->cond, cond);
 
-        builder_add(sb, "  jnz %%%s, @.loop%zu, @.endloop%zu", cond, for_num,
+        builder_add("  jnz %%%s, @.loop%zu, @.endloop%zu", cond, for_num,
                     for_num);
 
-        builder_add(sb, "@.loop%zu", for_num);
-        bool terminated = codegen_stmt(node->block, sb);
+        builder_add("@.loop%zu", for_num);
+        bool terminated = codegen_stmt(node->block);
 
         if (!terminated) {
-                builder_add(sb, "");
-                codegen_expr(node->post, sb, ".post");
-                builder_add(sb, "  jmp @.check%zu", for_num);
+                builder_add("");
+                codegen_expr(node->post, ".post");
+                builder_add("  jmp @.check%zu", for_num);
         }
 
-        builder_add(sb, "@.endloop%zu", for_num);
+        builder_add("@.endloop%zu", for_num);
 }
 
-static void codegen_stmt_fwhile(NodeStForWhile *node, char **sb)
+static void codegen_stmt_fwhile(NodeStForWhile *node)
 {
         size_t while_num = next_reg++;
-        builder_add(sb, "\n@.check%zu", while_num);
+        builder_add("\n@.check%zu", while_num);
         const char *rc_str(cond, format(".cond%zu", next_reg++));
-        codegen_expr(node->cond, sb, cond);
+        codegen_expr(node->cond, cond);
 
-        builder_add(sb, "  jnz %%%s, @.loop%zu, @.endloop%zu", cond, while_num,
+        builder_add("  jnz %%%s, @.loop%zu, @.endloop%zu", cond, while_num,
                     while_num);
 
-        builder_add(sb, "@.loop%zu", while_num);
-        bool terminated = codegen_stmt(node->block, sb);
+        builder_add("@.loop%zu", while_num);
+        bool terminated = codegen_stmt(node->block);
         if (!terminated) {
-                builder_add(sb, "  jmp @.check%zu", while_num);
+                builder_add("  jmp @.check%zu", while_num);
         }
 
-        builder_add(sb, "@.endloop%zu", while_num);
+        builder_add("@.endloop%zu", while_num);
 }
 
-static void codegen_stmt_expr(NodeStExpr *node, char **sb)
+static void codegen_stmt_expr(NodeStExpr *node)
 {
-        codegen_expr(node->expr, sb, ".sexpr");
+        codegen_expr(node->expr, ".sexpr");
 }
 
-static void codegen_expr_lit(NodeLit *lit, char **sb, const char *var_name)
+static void codegen_expr_lit(NodeLit *lit, const char *var_name)
 {
         switch (lit->kind) {
                 // TODO: this doesnt handle the possibility of an undeclared
@@ -205,72 +206,72 @@ static void codegen_expr_lit(NodeLit *lit, char **sb, const char *var_name)
                 // TODO: make sure dierct register assignings are as functional
                 // as stack alloc4, loadw and storew
         case LK_ID:
-                builder_add(sb, "  %%%s =w loadw %%.var." SV_Fmt, var_name,
+                builder_add("  %%%s =w loadw %%.var." SV_Fmt, var_name,
                             Mtokstr_fmt(*lit));
                 break;
         case LK_INT:
-                builder_add(sb, "  %%%s =w copy %.*s", var_name,
+                builder_add("  %%%s =w copy %.*s", var_name,
                             (int)lit->str.count, lit->str.data);
                 break;
         }
 }
 
-static void codegen_expr_unaop(NodeUnaop *node, char **sb, const char *var_name)
+static void codegen_expr_unaop(NodeUnaop *node, const char *var_name)
 {
         switch (node->kind) {
         case UNAOP_NEG: {
                 const char *rc_str(name, format(".tmp.una%zu", next_reg++));
-                codegen_expr(node->expr, sb, name);
+                codegen_expr(node->expr, name);
 
-                builder_add(sb, "  %%%s =w mul %%%s, -1", var_name, name);
+                builder_add("  %%%s =w mul %%%s, -1", var_name, name);
         } break;
         }
 }
 
-static void codegen_expr_binop(NodeBinop *node, char **sb, const char *var_name)
+static void codegen_expr_binop(NodeBinop *node, const char *var_name)
 {
         if (node->kind == BINOP_ASS) {
                 const char *rc_str(right_name, // intermediates
                                    format(".tmp.ass%zu", next_reg++));
-                codegen_expr(node->right, sb, right_name);
-                builder_add(sb, // declare local var
-                            "  %%.var." SV_Fmt " =l alloc4 1",
-                            Mtokstr_fmt(node->left->as.lit));
-                builder_add(sb, // assign
-                            "  storew %%%s, %%.var." SV_Fmt, right_name,
-                            Mtokstr_fmt(node->left->as.lit));
+                codegen_expr(node->right, right_name);
+                builder_add( // declare local var
+                        "  %%.var." SV_Fmt " =l alloc4 1",
+                        Mtokstr_fmt(node->left->as.lit));
+                builder_add( // assign
+                        "  storew %%%s, %%.var." SV_Fmt, right_name,
+                        Mtokstr_fmt(node->left->as.lit));
 
                 // output of the expression
-                builder_add(sb, "  %%%s =w copy %%%s", var_name, right_name);
+                builder_add("  %%%s =w copy %%%s", var_name, right_name);
                 return;
         }
 
         const char *rc_str(left_name, format(".tmp.l%zu", next_reg++));
-        codegen_expr(node->left, sb, left_name);
+        codegen_expr(node->left, left_name);
         const char *rc_str(right_name, format(".tmp.r%zu", next_reg++));
-        codegen_expr(node->right, sb, right_name);
+        codegen_expr(node->right, right_name);
 
-        builder_add(sb, "  %%%s =w %s %%%s, %%%s", var_name,
+        builder_add("  %%%s =w %s %%%s, %%%s", var_name,
                     binopk_to_str(node->kind), left_name, right_name);
 }
 
-static void codegen_expr(Node *node, char **sb, const char *var_name)
+static void codegen_expr(Node *node, const char *var_name)
 {
         assert(node);
 
         switch (node->kind) {
         case NKEx_UNAOP: {
-                codegen_expr_unaop(&node->as.unaop, sb, var_name);
+                codegen_expr_unaop(&node->as.unaop, var_name);
                 return;
         } break;
 
         case NKEx_BINOP: {
-                codegen_expr_binop(&node->as.binop, sb, var_name);
+                codegen_expr_binop(&node->as.binop, var_name);
                 return;
         } break;
 
         case NKEx_LIT: {
-                codegen_expr_lit(&node->as.lit, sb, var_name);
+                codegen_expr_lit(&node->as.lit, var_name);
                 return;
         } break;
 
@@ -289,24 +290,23 @@ static void codegen_expr(Node *node, char **sb, const char *var_name)
 char *codegen(Ast ast)
 {
         assert(ast);
-        char *sb = NULL;
         arrsetcap(sb, 1024);
 
-        builder_add(&sb, "export function w $main() {\n"
-                         "@start");
+        builder_add("export function w $main() {\n"
+                    "@start");
 
-        builder_add(&sb, "  %%.ret =w copy 0");
-        codegen_stmt(ast, &sb);
+        builder_add("  %%.ret =w copy 0");
+        codegen_stmt(ast);
 
-        builder_add(&sb, "\n@.ret");
-        builder_add(&sb, "  ret %%.ret");
-        builder_add(&sb, "}");
-        builder_null(&sb);
+        builder_add("\n@.ret");
+        builder_add("  ret %%.ret");
+        builder_add("}");
+        builder_null();
 
         return sb;
 }
 
-void codegen_destroy(char *data)
+void codegen_destroy(char *_)
 {
-        builder_destroy(data);
+        builder_destroy();
 }

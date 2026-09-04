@@ -1,0 +1,5 @@
+{
+  "code": 0,
+  "stdout": "{\nkw:for\n;\nint:1\n;\n{\nkw:return\nint:3\n;\n}\nkw:return\nint:5\n;\n}\n",
+  "stderr": ""
+}
