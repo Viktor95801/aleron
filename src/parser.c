@@ -3,6 +3,21 @@
 #include "vendor/stb_ds.h"
 #include <string.h>
 
+static bool starts_expr(TokenKind kind)
+{
+        switch (kind) {
+        case TK_OPAREN:
+        case TK_INT:
+        case TK_ID:
+        case TK_ADD:
+        case TK_SUB:
+                return true;
+
+        default:
+                return false;
+        }
+}
+
 typedef struct {
         const char *src;
         char *pos;
@@ -261,6 +276,10 @@ static Node *eunary(Parser *p)
         Node *result = eprimary(p);
 
         for (;;) {
+                if (starts_expr(p->ntok.kind)) {
+                        break;
+                }
+
                 if (consume(p, TK_MUL)) {
                         result = new_unary(UNAOP_STAR, result);
                         continue;
