@@ -1,5 +1,5 @@
 {
   "code": 0,
-  "stdout": "export function w $main() {\n@start\n  %.ret =w copy 0\n  %.tmp.ass2 =w copy 3\n  %.var.c =l alloc4 1\n  storew %.tmp.ass2, %.var.c\n  %.tmp.ass1 =w copy %.tmp.ass2\n  %.var.b =l alloc4 1\n  storew %.tmp.ass1, %.var.b\n  %.tmp.ass0 =w copy %.tmp.ass1\n  %.var.a =l alloc4 1\n  storew %.tmp.ass0, %.var.a\n  %.sexpr =w copy %.tmp.ass0\n  %.tmp.l5 =w loadw %.var.a\n  %.tmp.r6 =w loadw %.var.b\n  %.tmp.l4 =w add %.tmp.l5, %.tmp.r6\n  %.tmp.r7 =w loadw %.var.c\n  %.tmp3 =w add %.tmp.l4, %.tmp.r7\n  %.ret =w copy %.tmp3\n  jmp @.ret\n\n@.ret\n  ret %.ret\n}\n\n",
+  "stdout": "export function w $main() {\n@start\n  %.ret =l copy 0\n  %.tmp.ass2 =l copy 3\n  %.var.c =l alloc4 1\n  storew %.tmp.ass2, %.var.c\n  %.tmp.ass1 =l copy %.tmp.ass2\n  %.var.b =l alloc4 1\n  storew %.tmp.ass1, %.var.b\n  %.tmp.ass0 =l copy %.tmp.ass1\n  %.var.a =l alloc4 1\n  storew %.tmp.ass0, %.var.a\n  %.sexpr =l copy %.tmp.ass0\n  %.tmp.l5 =l loadw %.var.a\n  %.tmp.r6 =l loadw %.var.b\n  %.tmp.l4 =l add %.tmp.l5, %.tmp.r6\n  %.tmp.r7 =l loadw %.var.c\n  %.tmp3 =l add %.tmp.l4, %.tmp.r7\n  %.ret =l copy %.tmp3\n  jmp @.ret\n\n@.ret\n  ret %.ret\n}\n\n",
   "stderr": ""
 }

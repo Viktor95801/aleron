@@ -1,5 +1,5 @@
 {
   "code": 0,
-  "stdout": "export function w $main() {\n@start\n  %.ret =w copy 0\n  %.tmp.l2 =w copy 22\n  %.tmp.r3 =w copy 26\n  %.tmp.l1 =w sub %.tmp.l2, %.tmp.r3\n  %.tmp.r4 =w copy 5\n  %.tmp0 =w add %.tmp.l1, %.tmp.r4\n  %.ret =w copy %.tmp0\n  jmp @.ret\n\n@.ret\n  ret %.ret\n}\n\n",
+  "stdout": "export function w $main() {\n@start\n  %.ret =l copy 0\n  %.tmp.l2 =l copy 22\n  %.tmp.r3 =l copy 26\n  %.tmp.l1 =l sub %.tmp.l2, %.tmp.r3\n  %.tmp.r4 =l copy 5\n  %.tmp0 =l add %.tmp.l1, %.tmp.r4\n  %.ret =l copy %.tmp0\n  jmp @.ret\n\n@.ret\n  ret %.ret\n}\n\n",
   "stderr": ""
 }

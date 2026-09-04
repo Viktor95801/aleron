@@ -67,6 +67,8 @@ static void codegen_expr_lit(NodeLit *lit, const char *var_name);
 static void codegen_expr_unaop(NodeUnaop *una, const char *var_name);
 static void codegen_expr_binop(NodeBinop *bin, const char *var_name);
 
+static void codegen_addr(Node *node, const char *var_name);
+
 static bool codegen_stmt(Node *node)
 {
         assert(node);
@@ -117,7 +119,7 @@ static void codegen_stmt_return(NodeStReturn *node)
         const char *rc_str(name, format(".tmp%zu", next_reg++));
         codegen_expr(node->expr, name);
 
-        builder_add("  %%.ret =w copy %%%s", name);
+        builder_add("  %%.ret =l copy %%%s", name);
         builder_add("  jmp @.ret");
 }
 
@@ -206,11 +208,11 @@ static void codegen_expr_lit(NodeLit *lit, const char *var_name)
                 // TODO: make sure dierct register assignings are as functional
                 // as stack alloc4, loadw and storew
         case LK_ID:
-                builder_add("  %%%s =w loadw %%.var." SV_Fmt, var_name,
+                builder_add("  %%%s =l loadw %%.var." SV_Fmt, var_name,
                             Mtokstr_fmt(*lit));
                 break;
         case LK_INT:
-                builder_add("  %%%s =w copy %.*s", var_name,
+                builder_add("  %%%s =l copy %.*s", var_name,
                             (int)lit->str.count, lit->str.data);
                 break;
         }
@@ -223,9 +225,23 @@ static void codegen_expr_unaop(NodeUnaop *node, const char *var_name)
                 const char *rc_str(name, format(".tmp.una%zu", next_reg++));
                 codegen_expr(node->expr, name);
 
-                builder_add("  %%%s =w mul %%%s, -1", var_name, name);
-        } break;
+                builder_add("  %%%s =l mul %%%s, -1", var_name, name);
+                return;
         }
+        case UNAOP_ADDR: {
+                error("todo: unaop_addr and codegen_addr");
+                return;
+        }
+        case UNAOP_STAR: {
+                const char *rc_str(name, format(".tmp.una%zu", next_reg++));
+                codegen_expr(node->expr, name);
+
+                builder_add("  %%%s =l loadw %%%s", var_name, name);
+
+                return;
+        }
+        }
+        error(".");
 }
 
 static void codegen_expr_binop(NodeBinop *node, const char *var_name)
@@ -242,7 +258,7 @@ static void codegen_expr_binop(NodeBinop *node, const char *var_name)
                         Mtokstr_fmt(node->left->as.lit));
 
                 // output of the expression
-                builder_add("  %%%s =w copy %%%s", var_name, right_name);
+                builder_add("  %%%s =l copy %%%s", var_name, right_name);
                 return;
         }
 
@@ -251,7 +267,7 @@ static void codegen_expr_binop(NodeBinop *node, const char *var_name)
         const char *rc_str(right_name, format(".tmp.r%zu", next_reg++));
         codegen_expr(node->right, right_name);
 
-        builder_add("  %%%s =w %s %%%s, %%%s", var_name,
+        builder_add("  %%%s =l %s %%%s, %%%s", var_name,
                     binopk_to_str(node->kind), left_name, right_name);
 }
 
@@ -286,6 +302,21 @@ static void codegen_expr(Node *node, const char *var_name)
         error(format("invalid expression %d", node->kind));
 }
 
+// static void codegen_addr(Node *node, const char *var_name)
+// {
+//         if (node->kind == NKEx_LIT && node->as.lit.kind == LK_ID) {
+//                 NodeLit *n = &node->as.lit;
+
+//                 return;
+//         } else if (node->kind == NKEx_UNAOP &&
+//                    node->as.unaop.kind == UNAOP_ADDR) {
+//                 NodeUnaop *n = &node->as.unaop;
+//                 codegen_expr(, const char *var_name) return;
+//         }
+
+//         error("not an lvalue");
+// }
+
 // must free
 char *codegen(Ast ast)
 {
@@ -295,7 +326,7 @@ char *codegen(Ast ast)
         builder_add("export function w $main() {\n"
                     "@start");
 
-        builder_add("  %%.ret =w copy 0");
+        builder_add("  %%.ret =l copy 0");
         codegen_stmt(ast);
 
         builder_add("\n@.ret");
